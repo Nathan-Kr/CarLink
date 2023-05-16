@@ -9,7 +9,6 @@ services:
       minio_root_user: minioaccesskey123123
   postgres:
     environment:
-      PGDATA: ../.nhost/data/main/db/pgdata
       postgres_password: postgres
       postgres_user: postgres
 auth:
