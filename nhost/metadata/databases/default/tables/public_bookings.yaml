@@ -1,0 +1,10 @@
+table:
+  name: bookings
+  schema: public
+object_relationships:
+  - name: trip
+    using:
+      foreign_key_constraint_on: trip_id
+  - name: user
+    using:
+      foreign_key_constraint_on: passenger_id

@@ -1,0 +1,1 @@
+CREATE TABLE public.notifications (id uuid NOT NULL, user_id uuid NOT NULL, trip_id uuid NOT NULL, message text NOT NULL, red bool NOT NULL, timestamp timestamptz NOT NULL, PRIMARY KEY (id), FOREIGN KEY (user_id) REFERENCES auth.users (id) ON UPDATE RESTRICT ON DELETE RESTRICT, FOREIGN KEY (trip_id) REFERENCES public.trips (id) ON UPDATE RESTRICT ON DELETE RESTRICT);
