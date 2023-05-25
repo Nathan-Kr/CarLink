@@ -16,6 +16,7 @@ import {
 import {searchContext, searchFilterContext} from "../Context";
 import PersonIcon from "@mui/icons-material/Person";
 import {Avatar} from "../components/Avatar";
+import {Link as RouterLink} from "react-router-dom";
 
 const Home = ({onLoad, onPlaceChanged}) => {
     let isMedium = useMediaQuery("(max-width:900px)");
@@ -63,11 +64,11 @@ const Home = ({onLoad, onPlaceChanged}) => {
             display: "flex",
             justifyContent: "center",
             gap: "5rem",
-            width: "80vw",
+            width: "100vw",
             ...(isMedium && {
                 position: "absolute",
                 top: "10rem",
-                left: "5rem",
+                left: "1rem",
             }),
             ...(isMobile && {
                 display: "none",
@@ -132,6 +133,11 @@ const Home = ({onLoad, onPlaceChanged}) => {
 
     return (
         <Box sx={styles.banner}>
+            <img
+                style={{width: "10vw", position:"absolute", left: "2rem", top: "1rem"}}
+                src={isMedium ? mobileLogo : logo}
+                alt="logo"
+            />
             <Box
                 sx={{
                     display: "flex",
@@ -143,24 +149,23 @@ const Home = ({onLoad, onPlaceChanged}) => {
                     }),
                 }}
             >
-                <Box>
-                    <img
-                        style={{width: "8vw", marginRight: "3rem"}}
-                        src={isMedium ? mobileLogo : logo}
-                        alt="logo"
-                    />
-                </Box>
-
                 <Box sx={styles.tabs}>
                     <Typography
                         variant="subtitle1"
-                        sx={{pb: "5px", borderBottom: "2px solid white"}}
+                        sx={{pb: "5px", borderBottom: "2px solid white", cursor: "pointer"}}
+                        onClick={() => navigate("/")}
                     >
                         Rechercher un trajet
                     </Typography>
-                    <Typography variant="subtitle1">Proposer un trajet</Typography>
+                    <Typography
+                        variant="subtitle1"
+                        sx={{cursor: "pointer"}}
+                        onClick={() => navigate("/account/itinerary")}
+                    >
+                        Proposer un trajet
+                    </Typography>
                 </Box>
-                <Box display="flex">
+                <Box style={{width: "10vw", position:"absolute", right: "2rem", top: "2rem"}}>
                     <Avatar color="#fff"/>
                 </Box>
             </Box>
@@ -251,7 +256,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
                                 justifyContent: "center",
                             }),
                         }}
-                        onClick={() => navigate("/rentals")}
+                        onClick={() => navigate("/search")}
                     >
                         <IconButton disabled={!(arrival && departure)}>
                             <SearchIcon

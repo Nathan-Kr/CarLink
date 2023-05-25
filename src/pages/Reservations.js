@@ -12,7 +12,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../images/Logo.png";
 import mobileLogo from "../images/mobileLogo.png";
-const Trip = () => {
+const Reservations = () => {
   let isMobile = useMediaQuery("(max-width:850px)");
   const styles = {
     logo: {
@@ -194,4 +194,4 @@ const Trip = () => {
   );
 };
 
-export default Trip;
+export default Reservations;

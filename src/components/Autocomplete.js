@@ -10,7 +10,7 @@ import { debounce } from '@mui/material/utils';
 
 const autocompleteService = { current: null };
 
-export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged}) {
+export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged, underlined}) {
     const [value, setValue] = React.useState(null);
     const [inputValue, setInputValue] = React.useState('');
     const [options, setOptions] = React.useState([]);
@@ -90,7 +90,7 @@ export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged}) {
                             }}
                             placeholder={placeholder}
                             fullWidth
-                           InputProps={{...params.InputProps, disableUnderline: true}}
+                           InputProps={{...params.InputProps, disableUnderline: !underlined}}
                 />
             )}
             renderOption={(props, option) => {

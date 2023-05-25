@@ -24,7 +24,7 @@ export const Avatar = ({color}) => {
         setAnchorElUser(null);
     };
     return (
-        <Box sx={{ flexGrow: 0 }}>
+        <Box sx={{ flexGrow: 0, display: 'flex', flexDirection: 'row-reverse' }}>
             <Tooltip title="Open settings">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                     <SignedIn>

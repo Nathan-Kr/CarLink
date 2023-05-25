@@ -17,7 +17,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import SwipeableEdgeDrawer from "../../components/MobileDrawer";
 import Home from "../Home";
 import {Avatar} from "../../components/Avatar";
-const Rentals = () => {
+const Search = () => {
   const months = [
     "Jan",
     "Feb",
@@ -240,4 +240,4 @@ const Rentals = () => {
   );
 };
 
-export default Rentals;
+export default Search;
