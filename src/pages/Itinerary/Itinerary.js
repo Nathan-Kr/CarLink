@@ -28,12 +28,12 @@ const steps = ['Date', 'Départ', 'Arrivée', 'Places', 'Prix', 'Confirmation'];
 export default function Itinerary() {
   let isMedium = useMediaQuery("(max-width:900px)");
 
-  const [activeStep, setActiveStep] = React.useState(5);
+  const [activeStep, setActiveStep] = React.useState(0);
 
   const [formData, setFormData] = React.useState({
-    "departure": {"description": "blf"},
-    "arrival": {"description": "blf"},
-    "departureDate": {"$d": new Date()},
+    "departure": null,
+    "arrival": null,
+    "departureDate": null,
     "seats": 4,
     "price": 15,
   });
