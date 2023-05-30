@@ -23,3 +23,50 @@ array_relationships:
         table:
           name: notifications
           schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      set:
+        driver_id: X-Hasura-User-Id
+      columns:
+        - driver_id
+        - departure_address
+        - arrival_address
+        - departure_time
+        - price_per_seat
+        - available_seat
+        - finished
+select_permissions:
+  - role: public
+    permission:
+      columns:
+        - id
+        - driver_id
+        - departure_address
+        - arrival_address
+        - departure_time
+        - price_per_seat
+        - available_seat
+        - finished
+      filter: {}
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - departure_address
+        - arrival_address
+        - departure_time
+        - price_per_seat
+        - available_seat
+        - finished
+      filter:
+        driver_id:
+          _eq: X-Hasura-User-Id
+      check: null
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        driver_id:
+          _eq: X-Hasura-User-Id

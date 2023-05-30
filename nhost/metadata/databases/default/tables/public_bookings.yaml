@@ -8,3 +8,33 @@ object_relationships:
   - name: user
     using:
       foreign_key_constraint_on: passenger_id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        passenger_id:
+          _eq: X-Hasura-User-Id
+      set:
+        passenger_id: X-Hasura-User-Id
+      columns:
+        - trip_id
+        - passenger_id
+        - seats_booked
+        - payment_status
+        - booking_status
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - booking_status
+      filter:
+        trip:
+          driver_id:
+            _eq: X-Hasura-User-Id
+      check: null
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        passenger_id:
+          _eq: X-Hasura-User-Id
