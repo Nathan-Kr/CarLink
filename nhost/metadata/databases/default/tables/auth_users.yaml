@@ -91,13 +91,6 @@ object_relationships:
   - name: defaultRoleByRole
     using:
       foreign_key_constraint_on: default_role
-  - name: trip
-    using:
-      foreign_key_constraint_on:
-        column: id
-        table:
-          name: trips
-          schema: public
 array_relationships:
   - name: Balance
     using:
@@ -169,13 +162,6 @@ array_relationships:
         table:
           name: user_security_keys
           schema: auth
-  - name: trips
-    using:
-      foreign_key_constraint_on:
-        column: id
-        table:
-          name: trips
-          schema: public
   - name: userProviders
     using:
       foreign_key_constraint_on:
