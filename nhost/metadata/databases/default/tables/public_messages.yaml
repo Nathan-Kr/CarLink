@@ -1,3 +1,37 @@
 table:
   name: messages
   schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      set:
+        sender_id: X-Hasura-User-Id
+      columns:
+        - sender_id
+        - receiver_id
+        - trip_id
+        - content
+        - timestamp
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - sender_id
+        - receiver_id
+        - trip_id
+        - content
+        - timestamp
+      filter:
+        _or:
+          - sender_id:
+              _eq: X-Hasura-User-Id
+          - receiver_id:
+              _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        sender_id:
+          _eq: X-Hasura-User-Id

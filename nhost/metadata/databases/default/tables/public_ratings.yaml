@@ -1,3 +1,61 @@
 table:
   name: ratings
   schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      set:
+        rater_id: X-Hasura-User-Id
+      columns:
+        - id
+        - rater_id
+        - rated_id
+        - trip_id
+        - rating
+        - comment
+        - timestamp
+select_permissions:
+  - role: public
+    permission:
+      columns:
+        - id
+        - rater_id
+        - rated_id
+        - trip_id
+        - rating
+        - comment
+        - timestamp
+      filter: {}
+  - role: user
+    permission:
+      columns:
+        - id
+        - rater_id
+        - rated_id
+        - trip_id
+        - rating
+        - comment
+        - timestamp
+      filter: {}
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - rater_id
+        - rated_id
+        - trip_id
+        - rating
+        - comment
+        - timestamp
+      filter: {}
+      check: null
+      set:
+        rater_id: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        rater_id:
+          _eq: X-Hasura-User-Id

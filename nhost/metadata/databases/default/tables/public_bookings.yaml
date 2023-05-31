@@ -22,6 +22,17 @@ insert_permissions:
         - seats_booked
         - payment_status
         - booking_status
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - trip_id
+        - passenger_id
+        - seats_booked
+        - payment_status
+        - booking_status
+      filter: {}
 update_permissions:
   - role: user
     permission:
