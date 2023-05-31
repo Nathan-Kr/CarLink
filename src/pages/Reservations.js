@@ -12,6 +12,24 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../images/Logo.png";
 import mobileLogo from "../images/mobileLogo.png";
+import { gql, useQuery } from '@apollo/client'
+import { useUserId } from '@nhost/react'
+
+const GET_TRIPS = gql`
+query getTrips($driver_id: uuid) {
+  trips(where: {driver_id: {_eq: $driver_id}}) {
+    available_seat
+    arrival_address
+    departure_address
+    departure_time
+    finished
+    id
+    price_per_seat
+  }
+}
+
+`
+
 const Reservations = () => {
   let isMobile = useMediaQuery("(max-width:850px)");
   const styles = {
@@ -29,69 +47,17 @@ const Reservations = () => {
     },
   };
   const navigate = useNavigate();
-  const [trips, setTrips] = useState([]);
-  const allBooking = async () => {
-    let options = {
-      contractAddress: process.env.REACT_APP_CONTRACT_ADDRESS,
-      functionName: "showMyBookings",
-      abi: [
-        {
-          inputs: [],
-          name: "showMyBookings",
-          outputs: [
-            {
-              components: [
-                {
-                  internalType: "string",
-                  name: "name",
-                  type: "string",
-                },
-                {
-                  internalType: "string",
-                  name: "destination",
-                  type: "string",
-                },
-                {
-                  internalType: "string",
-                  name: "checkIn",
-                  type: "string",
-                },
-                {
-                  internalType: "string",
-                  name: "checkOut",
-                  type: "string",
-                },
-                {
-                  internalType: "string",
-                  name: "imageUrl",
-                  type: "string",
-                },
-              ],
-              internalType: "struct aibnb.BookingDetails[]",
-              name: "",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-      ],
-      params: {},
-    };
-    let data = null;
-    setTrips(...trips, data);
-  };
-  const [isLoading, setIsLoading] = useState(false);
-  useEffect(() => {
-    setIsLoading(true);
-    allBooking();
-    setIsLoading(false);
-  }, []);
+  const userId = useUserId()
+  const { loading, data, error } = useQuery(GET_TRIPS, {
+    variables: { "driver_id": userId },
+  });
+
+  const trips = data?.trips
 
   return (
     <Box>
       <Container
-        minWidth="xl"
+        maxWidth="xl"
         sx={{
           display: "flex",
           justifyContent: "space-between",
@@ -113,17 +79,17 @@ const Reservations = () => {
         </Box>
       </Container>
       <Divider />
-      <Container minWidth="xl">
+      <Container maxWidth="xl">
         <Typography
           variant="h4"
           sx={{ mt: "2rem", mb: "2rem" }}
           color="initial"
         >
-          Trips
+          Mes trajets
         </Typography>
         <Divider />
 
-        {isLoading ? (
+        {loading ? (
           <ReactLoading
             type="bubbles"
             color="  #EB4E5F"
@@ -144,23 +110,20 @@ const Reservations = () => {
                     p: "3rem",
                   }}
                 >
-                  <img
-                    src={trip.imageUrl}
-                    alt="place"
-                    style={{
-                      width: "100%",
-                      objectFit: "cover",
-                      height: "100%",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
                   <center>
                     <Typography variant="body1" color="initial">
-                      {trip.name}
+                      {trip.departure_address.substring(0,20)} to {trip.arrival_address.substring(0,20)}
                     </Typography>
                     <Typography variant="body2" color="gray">
-                      From {trip.checkIn} to {trip.checkOut}
+                      {trip.departure_time}
                     </Typography>
+                    <Typography variant="body2" color="gray">
+                      {trip.price_per_seat}€
+                    </Typography>
+                    <Typography variant="body2" color="gray">
+                      {trip.available_seat} seats available
+                    </Typography>
+                    <Button>Annuler</Button>
                   </center>
                 </Grid>
               ))}

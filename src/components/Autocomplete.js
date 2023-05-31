@@ -7,13 +7,16 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import parse from 'autosuggest-highlight/parse';
 import { debounce } from '@mui/material/utils';
+import { useRef } from 'react';
 
 const autocompleteService = { current: null };
+const geocodeService = { current: null };
 
 export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged, underlined}) {
     const [value, setValue] = React.useState(null);
     const [inputValue, setInputValue] = React.useState('');
     const [options, setOptions] = React.useState([]);
+    const inputRef = useRef();
 
     const fetch = React.useMemo(
         () =>
@@ -23,12 +26,31 @@ export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged, und
         [],
     );
 
+    const geocodeByPlaceID = (placeId) => {      
+        return new Promise((resolve, reject) => {
+          geocodeService.current.geocode({ placeId }, (results, status) => {
+            if (status !== window.google.maps.GeocoderStatus.OK) {
+              reject(
+                new Error(
+                  `Geocoding query for a place with an ID of '${placeId}' failed - response status: ${status}`,
+                ),
+              )
+      
+              return
+            }
+      
+            resolve(results[0])
+          })
+        })
+      }
+
     React.useEffect(() => {
         let active = true;
 
         if (!autocompleteService.current && window.google) {
             autocompleteService.current =
                 new window.google.maps.places.AutocompleteService();
+            geocodeService.current = new window.google.maps.Geocoder();
         }
         if (!autocompleteService.current) {
             return undefined;
@@ -72,9 +94,9 @@ export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged, und
             filterSelectedOptions
             value={value}
             noOptionsText="Pas de résultats"
-            onChange={(event, newValue) => {
+            onChange={async (event, newValue) => {
                 setOptions(newValue ? [newValue, ...options] : options);
-                onPlaceChanged(newValue);
+                onPlaceChanged(await geocodeByPlaceID(newValue.place_id));
                 setValue(newValue);
             }}
             onInputChange={(event, newInputValue) => {

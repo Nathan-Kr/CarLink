@@ -52,7 +52,7 @@ export const Avatar = ({color}) => {
                 <MenuItem onClick={handleCloseUserMenu}>
                     <Typography textAlign="center">Profile</Typography>
                 </MenuItem>
-                <MenuItem onClick={()=>navigate("/account/trip")}>
+                <MenuItem onClick={()=>navigate("/account/reservations")}>
                     <Typography textAlign="center">Mes trajets</Typography>
                 </MenuItem>
                 <MenuItem onClick={()=> {
