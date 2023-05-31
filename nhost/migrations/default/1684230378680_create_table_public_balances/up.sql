@@ -1,1 +1,1 @@
-CREATE TABLE public."balances" (id uuid DEFAULT public.gen_random_uuid() NOT NULL, user_id uuid DEFAULT public.gen_random_uuid() NOT NULL, balance int4 NOT NULL, PRIMARY KEY (id), FOREIGN KEY (user_id) REFERENCES auth.users (id) ON UPDATE RESTRICT ON DELETE RESTRICT);
+CREATE TABLE public."balances" (id uuid DEFAULT public.gen_random_uuid() NOT NULL, user_id uuid NOT NULL, balance int4 NOT NULL, PRIMARY KEY (id), FOREIGN KEY (user_id) REFERENCES auth.users (id) ON UPDATE RESTRICT ON DELETE RESTRICT);

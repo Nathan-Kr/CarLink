@@ -13,9 +13,9 @@ export default function Review({formData}) {
                 Départ le <b>{formData.departureDate.$d.toLocaleDateString()}</b> à <b>{formData.departureDate.$d.toLocaleTimeString()}</b>
             </Typography><br/>
             <Typography variant="body-h6">
-                {formData.departure.formated_address}
+                {formData.departure.formatted_address}
                 {"  "}&rarr;{"  "}
-                {formData.departure.formated_address}
+                {formData.arrival.formatted_address}
             </Typography><br/>
             <Typography variant="body-h6">
                 <b>{formData.seats}</b> places disponibles à <b>{formData.price}€</b> par place
