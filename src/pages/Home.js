@@ -171,48 +171,22 @@ const Home = ({onLoad, onPlaceChanged}) => {
             </Box>
             <Box display="flex" justifyContent="center">
                 <Box sx={styles.searchFields}>
-                    <Box
-                        style={{
-                            marginTop: "-5px",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                            display: "flex",
-                            flexDirection: "column",
-                            ...(isMobile && {
-                                width: "80%",
-                            }),
-                        }}
-                    >
-                        <Box sx={styles.inputs}>
-                            Départ
-                            <GoogleMapsAutocomplete
-                                onPlaceChanged={setDeparture}
-                                variant="standard"
-                                placeholder={departure?.description || "D'où partez-vous?"}
-                            />
-                        </Box>
+                    <Box sx={styles.inputs}>
+                        Départ
+                        <GoogleMapsAutocomplete
+                            onPlaceChanged={setDeparture}
+                            variant="standard"
+                            placeholder={departure?.formatted_address || "D'où partez-vous?"}
+                        />
                     </Box>
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
-                    <Box
-                        style={{
-                            marginTop: "-5px",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                            display: "flex",
-                            flexDirection: "column",
-                            ...(isMobile && {
-                                width: "80%",
-                            }),
-                        }}
-                    >
-                        <Box sx={styles.inputs}>
-                            Arrivée
-                            <GoogleMapsAutocomplete
-                                onPlaceChanged={setArrival}
-                                variant="standard"
-                                placeholder={arrival?.description || "Où allez-vous?"}
-                            />
-                        </Box>
+                    <Box sx={styles.inputs}>
+                        Arrivée
+                        <GoogleMapsAutocomplete
+                            onPlaceChanged={setArrival}
+                            variant="standard"
+                            placeholder={arrival?.formatted_address || "Où allez-vous?"}
+                        />
                     </Box>
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
                     <Box sx={styles.inputs}>
@@ -256,9 +230,9 @@ const Home = ({onLoad, onPlaceChanged}) => {
                                 justifyContent: "center",
                             }),
                         }}
-                        onClick={() => navigate("/search")}
+
                     >
-                        <IconButton disabled={!(arrival && departure)}>
+                        <IconButton disabled={!(arrival && departure)} onClick={()=>navigate('/search')}>
                             <SearchIcon
                                 sx={{
                                     color: "white",

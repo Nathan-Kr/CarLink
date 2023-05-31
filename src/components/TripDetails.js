@@ -4,15 +4,9 @@ import { Rating, Button, Box, useMediaQuery } from "@mui/material";
 import styled from "styled-components";
 import Icon from "antd/es/icon";
 
-const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
+const TripDetails = ({ selected, trip, refProp, isMobile }) => {
   const isSmall = useMediaQuery("(max-width:420px)");
-  const rentalsList = {
-    attributes: {
-      unoDescription: "2 Guests • 2 Beds • 1 Rooms",
-      dosDescription: "Wifi • Kitchen • Living Area",
-    },
-  };
-
+  console.log(trip);
   if (selected) {
     refProp?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -104,20 +98,16 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
       <Box sx={styles.rentalDiv}>
         <img
           style={styles.rentalImg}
-          src={
-            place.photo
-              ? place.photo.images.large.url
-              : "https://imgs.search.brave.com/eoIZlg2L0ttNGXCr45Nq_l3TtsSqY7MQ3YlS5n6jIqs/rs:fit:789:883:1/g:ce/aHR0cHM6Ly9sZWlm/ZXJwcm9wZXJ0aWVz/LmNvbS93cC1jb250/ZW50L3VwbG9hZHMv/Tk8tSU1BR0UtQVZB/SUxBQkxFLmpwZw"
-          }
+          src={"https://www.google.fr/url?sa=i&url=https%3A%2F%2Ffr.vecteezy.com%2Ffree-png-fr%2Fauto&psig=AOvVaw2RpylehhMkGp7bo9io_6au&ust=1685617073299000&source=images&cd=vfe&ved=0CA4QjRxqFwoTCJjQ2Yezn_8CFQAAAAAdAAAAABAD"}
           alt="place"
         />
         <Box sx={styles.rentalInfo}>
-          <Box sx={styles.rentalTitle}>{place.name}</Box>
+          <Box sx={styles.rentalTitle}>{trip.departure_maps_id}</Box>
           <Box sx={styles.rentalDesc}>
-            {rentalsList.attributes.unoDescription}
+            {trip.departure_maps_id}
           </Box>
           <Box sx={styles.rentalDesc}>
-            {rentalsList.attributes.dosDescription}
+            {trip.departure_maps_id}
           </Box>
           <Box
             style={{
@@ -132,7 +122,7 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
             <StyledRating
               name="read-only"
               size="small"
-              value={Number(place.rating)}
+              value={Number(trip.rating)}
               readOnly
               precision={0.5}
             />
@@ -146,7 +136,7 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
                   }),
                 }}
               >
-                {Number(place.rating)}
+                {Number(trip.rating)}
               </span>
               <span
                 style={{
@@ -157,7 +147,7 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
                   }),
                 }}
               >
-                ({place.num_reviews} reviews)
+                ({trip.num_reviews} reviews)
               </span>
             </Box>
           </Box>
@@ -165,7 +155,7 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
             <Link
               to={"/details"}
               style={{ textDecoration: "none" }}
-              state={place}
+              state={trip}
             >
               <Button
                 size="small"
@@ -182,7 +172,7 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
               </Button>
             </Link>
             <Box sx={styles.price}>
-              {place.rating ? Number(place.rating) / 50 : 0.07} / Day
+              {trip.rating ? Number(trip.rating) / 50 : 0.07} / Day
             </Box>
           </Box>
         </Box>
@@ -191,4 +181,4 @@ const PlaceDetails = ({ selected, place, refProp, isMobile }) => {
   );
 };
 
-export default PlaceDetails;
+export default TripDetails;

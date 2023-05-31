@@ -19,6 +19,9 @@ export default function Review({formData}) {
             </Typography><br/>
             <Typography variant="body-h6">
                 <b>{formData.seats}</b> places disponibles à <b>{formData.price}€</b> par place
+            </Typography><br/>
+            <Typography variant="body-h6">
+                {formData.distance}  -  {formData.duration}
             </Typography>
         </React.Fragment>
     );

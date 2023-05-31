@@ -3,8 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../../images/Logo.png";
 import mobileLogo from "../../images/mobileLogo.png";
 import ReactLoading from "react-loading";
-import Map from "../../components/Map";
-import PlaceDetails from "../../components/PlaceDetails";
+import TripDetails from "../../components/TripDetails";
 import { searchContext } from "../../Context";
 import {
   Box, Button,
@@ -14,24 +13,35 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
-import SwipeableEdgeDrawer from "../../components/MobileDrawer";
+import SwipeableEdgeDrawer from "./MobileDrawer";
 import Home from "../Home";
 import {Avatar} from "../../components/Avatar";
+import { gql, useQuery } from '@apollo/client'
+import {
+  GoogleMap,
+  Marker,
+  DirectionsRenderer
+} from '@react-google-maps/api'
+
+const GET_TRIPS = gql`
+query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: float8, $endlong: float8) {
+  get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong}) {
+    id
+    driver_id
+    departure_maps_id
+    departure_lat
+    departure_long
+    arrival_maps_id
+    arrival_lat
+    arrival_long
+    departure_time
+    price_per_seat
+    available_seat
+    finished
+  }
+}`;
+
 const Search = () => {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
   let isMedium = useMediaQuery("(max-width:1350px)");
   let isMobile = useMediaQuery("(max-width:700px)");
   const {
@@ -44,20 +54,39 @@ const Search = () => {
     passengers,
     setPassengers,
   } = useContext(searchContext);
-
+  
+  const [directions, setDirections] = useState(null);
   const [elRefs, setElRefs] = useState([]);
-
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if(departure.length === 0 || arrival.length === 0) {
-      navigate("/");
-    }
-  }, [departure, arrival, departureDate, passengers]);
-
-  if(!departure || !arrival) {
-    return <></>
+  const directionsService = new window.google.maps.DirectionsService()
+ 
+  if(departure.length === 0 || arrival.length === 0) {
+    navigate("/");
   }
+  useEffect(() => {
+    directionsService.route(
+      {
+        origin: departure?.formatted_address,
+        destination: arrival?.formatted_address,
+        travelMode: window.google.maps.TravelMode.DRIVING
+      }).then((response) => {
+        setDirections(response)
+      }).catch((e) => console.log(e))
+  }, [departure, arrival])
+
+  const { loading, data, error } = useQuery(GET_TRIPS, {
+    variables: {
+      "bound": 10, 
+      "startlat": departure?.geometry?.location.lat(),
+      "startlong": departure?.geometry?.location.lng(),
+      "endlat": arrival?.geometry?.location.lat(),
+      "endlong": arrival?.geometry?.location.lng()
+    }
+  });
+  const trips = data?.get_nearby_trips
+  
+  
+  
 
   const styles = {
     logo: {
@@ -161,19 +190,19 @@ const Search = () => {
           </Link>
         </Box>
         <Box sx={styles.searchReminder} onClick={()=>navigate("/")}>
-          <Typography varient="body1" sx={styles.filter}>
-            {departure?.description}
+          <Typography variant="body1" sx={styles.filter}>
+            {departure?.formatted_address}
           </Typography>
           <Box sx={styles.vl} />
-          <Typography varient="body1" sx={styles.filter}>
-            {arrival?.description}
+          <Typography variant="body1" sx={styles.filter}>
+            {arrival?.formatted_address}
           </Typography>
           <Box sx={styles.vl} />
-          <Typography varient="body1" sx={styles.filter}>
+          <Typography variant="body1" sx={styles.filter}>
             {departureDate}
           </Typography>
           <Box sx={styles.vl} />
-          <Typography varient="body1" sx={styles.filter}>
+          <Typography variant="body1" sx={styles.filter}>
             {passengers} Passagers
           </Typography>
         </Box>
@@ -182,24 +211,33 @@ const Search = () => {
             <Avatar color="#EB4E5F"/>
         </Box>
       </Box>
-
-      {/* <hr style={styles.line} /> */}
+      <Box sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}>
+        <Box display="flex">
+          <Typography variant="overline">
+            Temps de trajet estimé: <b>{directions?.routes[0]?.legs[0]?.duration?.text}</b> - Distance: <b>{directions?.routes[0]?.legs[0]?.distance?.text}</b>
+          </Typography>
+        </Box>
+      </Box>
       <Divider />
       <Box sx={styles.rentalsContent}>
         {isMedium ? (
           <SwipeableEdgeDrawer
-            places={[]}
+            trips={trips}
             childClicked={null}
             isMobile={isMobile}
           />
         ) : (
-          <Box varient="body1" sx={styles.rentalsContentL}>
+          <Box variant="body1" sx={styles.rentalsContentL}>
             <Box>
-              <Typography varient="body2" fontSize={15}>
+              <Typography variant="body2" fontSize={15}>
                 Trajets disponibles
               </Typography>
             </Box>
-            {true ? (
+            {loading ? (
               <Box
                 style={{
                   display: "flex",
@@ -215,15 +253,16 @@ const Search = () => {
                 />
               </Box>
             ) : (
-              [].map((place, i) => (
+              trips.map((trip, i) => (
                 <Box ref={elRefs[i]} key={i}>
                   {/* <hr style={styles.line2} /> */}
                   <Divider sx={{ margin: "30px 0px" }} />
                   <Box>
-                    <PlaceDetails
-                      place={place}
+                    <TripDetails
+                      trip={trip}
                       selected={Number(1) === i}
                       refProp={elRefs[i]}
+                      isMobile={isMobile}
                     />
                   </Box>
                 </Box>
@@ -232,8 +271,20 @@ const Search = () => {
           </Box>
         )}
         <Box sx={styles.rentalsContentR}>
-          <Map
-          />
+          <GoogleMap
+            zoom={5}
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            options={{
+              zoomControl: false,
+              streetViewControl: false,
+              mapTypeControl: false,
+              fullscreenControl: false,
+            }}
+          >
+            {directions && (
+              <DirectionsRenderer directions={directions} />
+            )}
+          </GoogleMap>
         </Box>
       </Box>
     </Box>

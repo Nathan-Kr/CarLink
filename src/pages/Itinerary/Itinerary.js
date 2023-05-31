@@ -21,14 +21,14 @@ import {Link as RouterLink} from "react-router-dom";
 import {useMediaQuery} from "@mui/material";
 import Seats from "./Seats";
 import DateAndTime from "./DateAndTime";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import { gql, useMutation } from '@apollo/client'
-import {useUserId} from "@nhost/react";
 import LinearProgress from '@mui/material/LinearProgress';
-import GoogleMapReact from 'google-map-react';
-import LocationOnTwoToneIcon from "@mui/icons-material/LocationOnTwoTone";
-import Tooltip from "@mui/material/Tooltip";
-
+import {
+  GoogleMap,
+  Marker,
+  DirectionsRenderer
+} from '@react-google-maps/api'
 
 const steps = ['Date', 'Départ', 'Arrivée', 'Places', 'Prix', 'Confirmation'];
 
@@ -40,20 +40,42 @@ mutation AddTrip($trip: trips_insert_input!) {
 
 export default function Itinerary() {
   let isMedium = useMediaQuery("(max-width:900px)");
-  const userId = useUserId()
+  const [directionsResponse, setDirectionsResponse] = useState(null)
   const [ addTrip, { data, loading, error }] = useMutation(ADD_TRIP)
 
   const [activeStep, setActiveStep] = React.useState(0);
 
   const [formData, setFormData] = React.useState({
-    "departure": "null",
-    "arrival": "null",
+    "departure": null,
+    "arrival": null,
     "departureDate": null,
     "seats": 4,
     "price": 15,
+    "distance": "",
+    "duration": "",
   });
 
-  console.log(formData)
+  const directionsService = new window.google.maps.DirectionsService()
+  
+  useEffect(() => {
+    if (formData.departure && formData.arrival) {
+      directionsService.route({
+        origin: formData.departure?.formatted_address,
+        destination: formData.arrival?.formatted_address,
+        // eslint-disable-next-line no-undef
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      }).then((results) => {
+        console.log(results)
+        setDirectionsResponse(results)
+        setFormData({...formData,
+          "distance": results.routes[0].legs[0].distance.text,
+          "duration": results.routes[0].legs[0].duration.text
+        })
+      }).catch((e) => {
+        console.log(e)
+      })
+    }
+  }, [formData.departure, formData.arrival])
 
   useEffect(() => {
     if (activeStep === steps.length) {
@@ -122,13 +144,6 @@ export default function Itinerary() {
     setActiveStep(activeStep - 1);
   };
 
-  const defaultProps = {
-    center: {
-      lat: 10.99835602,
-      lng: 77.01502627
-    },
-    zoom: 11
-  };
 
   return (
       <Box>
@@ -142,7 +157,7 @@ export default function Itinerary() {
           </RouterLink>
           &nbsp;
         </Box>
-        <Container component="main" maxWidth="md" sx={{ mt: 5 }}>
+        <Container component="main" maxWidth="md" sx={{ mt: 5}}>
           <CssBaseline />
           <Paper variant="outlined" sx={{ my: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}>
             <Typography component="h1" variant="h4" align="center">
@@ -164,16 +179,20 @@ export default function Itinerary() {
                 <Typography variant="h5" gutterBottom>
                   En route !
                 </Typography>}
-                {!loading&&<Typography variant="subtitle1">
-                  Nous avons publié votre itinéraire. Vous pouvez le consulter dans la section&nbsp;
-                  <Link component={RouterLink} to="/account/reservations" variant="body2">
-                    {"Mes itinéraires"}
-                  </Link>
-                </Typography>}
+                <Container sx={{height: "15vh"}}>
+                  {!loading&&<Typography variant="subtitle1">
+                    Nous avons publié votre itinéraire. Vous pouvez le consulter dans la section&nbsp;
+                    <Link component={RouterLink} to="/account/reservations" variant="body2">
+                      {"Mes itinéraires"}
+                    </Link>
+                  </Typography>}
+                </Container>
               </React.Fragment>
             ) : (
               <React.Fragment>
-                {getStepContent(activeStep)}
+                <Container sx={{height: "15vh"}}>
+                  {getStepContent(activeStep)}
+                </Container>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   {activeStep !== 0 && (
                     <Button onClick={handleBack} sx={{ mt: 3, ml: 1 }}>
@@ -195,11 +214,22 @@ export default function Itinerary() {
           </Paper>
           <div style={{ height: '40vh', width: '100%' }}>
 
-          <GoogleMapReact
-            defaultCenter={defaultProps.center}
-            defaultZoom={defaultProps.zoom}
-          >
-          </GoogleMapReact>
+          <GoogleMap
+          zoom={5}
+          mapContainerStyle={{ width: '100%', height: '100%' }}
+          options={{
+            center: { lat: formData.departure?.geometry?.location?.lat() || 48.856614, lng: formData.departure?.geometry?.location?.lng() || 2.3522219 },
+            zoomControl: false,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          }}
+        >
+          {formData.departure && <Marker position={{ lat: formData.departure.geometry.location.lat(), lng: formData.departure.geometry.location.lng() }} />}
+          {directionsResponse && (
+            <DirectionsRenderer directions={directionsResponse} />
+          )}
+        </GoogleMap>
         </div>
         </Container>
       </Box>

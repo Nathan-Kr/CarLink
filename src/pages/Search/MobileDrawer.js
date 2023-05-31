@@ -7,8 +7,9 @@ import { grey } from "@mui/material/colors";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
-import PlaceDetails from "./PlaceDetails";
+import TripDetails from "../../components/TripDetails";
 import ReactLoading from "react-loading";
+import { tr } from "date-fns/locale";
 const drawerBleeding = 56;
 
 const Root = styled("div")(({ theme }) => ({
@@ -44,7 +45,7 @@ function SwipeableEdgeDrawer(props) {
   // This is used only for the example
   const container =
     window !== undefined ? () => window().document.body : undefined;
-  console.log(props.places);
+  console.log(props.trips);
 
   const styles = {
     line2: {
@@ -55,11 +56,11 @@ function SwipeableEdgeDrawer(props) {
   const [elRefs, setElRefs] = React.useState([]);
   React.useEffect(() => {
     setElRefs((refs) =>
-      Array(props.places?.length)
+      Array(props.trips?.length)
         .fill()
         .map((_, i) => refs[i] || React.createRef())
     );
-  }, [props.places]);
+  }, [props.trips]);
   return (
     <Root>
       <CssBaseline />
@@ -100,7 +101,7 @@ function SwipeableEdgeDrawer(props) {
               variant={props.isMobile ? "subtitle1" : "h6"}
               sx={{ p: 3 }}
             >
-              Stays Available For Your Destination
+              Trajets disponibles
             </Typography>
           </center>
         </StyledBox>
@@ -131,12 +132,12 @@ function SwipeableEdgeDrawer(props) {
             </Box>
           ) : (
             <>
-              {props.places?.map((place, i) => (
+              {props.trips?.map((trip, i) => (
                 <Box key={i} ref={elRefs[i]}>
                   {i !== 0 && <hr style={styles.line2} />}
-                  <PlaceDetails
+                  <TripDetails
                     isMobile={props.isMobile}
-                    place={place}
+                    trip={trip}
                     selected={Number(props.childClicked) === i}
                     refProp={elRefs[i]}
                   />
