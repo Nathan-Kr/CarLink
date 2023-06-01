@@ -184,16 +184,24 @@ select_permissions:
   - role: public
     permission:
       columns:
-        - last_seen
-        - display_name
         - avatar_url
+        - display_name
+        - id
+        - last_seen
+      computed_fields:
+        - rating
+        - reviews_count
       filter: {}
   - role: user
     permission:
       columns:
-        - id
-        - display_name
         - avatar_url
+        - display_name
         - email
+        - id
+        - last_seen
         - phone_number
+      computed_fields:
+        - rating
+        - reviews_count
       filter: {}
