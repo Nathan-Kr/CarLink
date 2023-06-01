@@ -8,13 +8,10 @@ import { searchContext } from "../../Context";
 import {
   Box, Button,
   Divider,
-  IconButton,
   Typography,
   useMediaQuery,
 } from "@mui/material";
-import PersonIcon from "@mui/icons-material/Person";
 import SwipeableEdgeDrawer from "./MobileDrawer";
-import Home from "../Home";
 import {Avatar} from "../../components/Avatar";
 import { gql, useQuery } from '@apollo/client'
 import {
@@ -24,8 +21,8 @@ import {
 } from '@react-google-maps/api'
 
 const GET_TRIPS = gql`
-query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: float8, $endlong: float8) {
-  get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong}) {
+query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: float8, $endlong: float8, $departure_date: date) {
+  get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong, departure_date: $departure_date}) {
     id
     driver_id
     departure_address
@@ -38,8 +35,21 @@ query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: floa
     price_per_seat
     available_seat
     finished
+    user {
+      rating
+      displayName
+      reviews_count
+    }
+    bookings_aggregate {
+      aggregate {
+        sum {
+          seats_booked
+        }
+      }
+    }
   }
-}`;
+}
+`;
 
 const Search = () => {
   let isMedium = useMediaQuery("(max-width:1350px)");
@@ -53,9 +63,10 @@ const Search = () => {
     setDepartureDate,
     passengers,
     setPassengers,
+    directions,
+    setDirections
   } = useContext(searchContext);
-  
-  const [directions, setDirections] = useState(null);
+
   const [elRefs, setElRefs] = useState([]);
   const navigate = useNavigate();
   const directionsService = new window.google.maps.DirectionsService()
@@ -80,11 +91,12 @@ const Search = () => {
       "startlat": departure?.geometry?.location.lat(),
       "startlong": departure?.geometry?.location.lng(),
       "endlat": arrival?.geometry?.location.lat(),
-      "endlong": arrival?.geometry?.location.lng()
+      "endlong": arrival?.geometry?.location.lng(),
+      "departure_date": departureDate
     }
   });
-  const trips = data?.get_nearby_trips
-  
+  const trips = data?.get_nearby_trips || [];
+  console.log(trips)
   
   
 
@@ -96,7 +108,7 @@ const Search = () => {
       ...(isMedium && { width: "3vw" }),
     },
     searchReminder: {
-      width: "35rem",
+      width: "45rem",
       border: "1.5px solid rgb(242, 242, 242)",
       borderRadius: "100px",
       height: "3rem",
@@ -191,11 +203,11 @@ const Search = () => {
         </Box>
         <Box sx={styles.searchReminder} onClick={()=>navigate("/")}>
           <Typography variant="body1" sx={styles.filter}>
-            {departure?.formatted_address}
+            {departure?.formatted_address?.length > 30 ? departure?.formatted_address?.substring(0,30) + "..." : departure?.formatted_address?.substring(0,30)}
           </Typography>
           <Box sx={styles.vl} />
           <Typography variant="body1" sx={styles.filter}>
-            {arrival?.formatted_address}
+            {arrival?.formatted_address?.length > 30 ? arrival?.formatted_address?.substring(0,30) + "..." : arrival?.formatted_address?.substring(0,30)}
           </Typography>
           <Box sx={styles.vl} />
           <Typography variant="body1" sx={styles.filter}>
@@ -227,6 +239,7 @@ const Search = () => {
         {isMedium ? (
           <SwipeableEdgeDrawer
             trips={trips}
+            directions={directions}
             childClicked={null}
             isMobile={isMobile}
           />

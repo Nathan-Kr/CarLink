@@ -1,14 +1,11 @@
 table:
   name: trips
   schema: public
-array_relationships:
-  - name: booking
+object_relationships:
+  - name: user
     using:
-      foreign_key_constraint_on:
-        column: trip_id
-        table:
-          name: bookings
-          schema: public
+      foreign_key_constraint_on: driver_id
+array_relationships:
   - name: bookings
     using:
       foreign_key_constraint_on:

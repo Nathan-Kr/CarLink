@@ -107,7 +107,7 @@ const TripDetails = ({ selected, trip, refProp, isMobile }) => {
             {trip.departure_address}
           </Box>
           <Box sx={styles.rentalDesc}>
-            {trip.departure_address}
+            {trip.departure_maps_id}
           </Box>
           <Box
             style={{

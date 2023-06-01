@@ -5,6 +5,7 @@ export const searchContext = createContext();
 export const Context = ({ children }) => {
   const [departure, setDeparture] = useState("");
   const [arrival, setArrival] = useState("");
+  const [directions, setDirections] = useState(null);
   const [departureDate, setDepartureDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -19,7 +20,9 @@ export const Context = ({ children }) => {
         departureDate,
         setDepartureDate,
         passengers,
-        setPassengers
+        setPassengers,
+        directions,
+        setDirections,
       }}
     >
       {children}

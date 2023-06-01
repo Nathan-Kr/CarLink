@@ -1,4 +1,4 @@
-import { LocalParkingOutlined, MeetingRoomOutlined } from "@mui/icons-material";
+import { LocalParkingOutlined, MeetingRoomOutlined, Spa } from "@mui/icons-material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
   InputBase,
@@ -12,59 +12,92 @@ import {
   Paper,
   IconButton, Button,
 } from "@mui/material";
-import PersonIcon from "@mui/icons-material/Person";
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import { searchContext } from "../../Context";
 
 import logo from "../../images/Logo.png";
 import mobileLogo from "../../images/mobileLogo.png";
+import EmojiFlagsIcon from '@mui/icons-material/EmojiFlags';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SportsScoreIcon from '@mui/icons-material/SportsScore';
 import { useNavigate } from "react-router-dom";
+import { Avatar } from "../../components/Avatar";
+import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import { useNhostClient } from "@nhost/react";
+const GET_USER = gql`
+query getUser($id: uuid!) {
+  user(id: $id) {
+    rating
+    reviews_count
+    displayName
+  }
+}
+`;
+
+const ADD_BOOKING = gql`
+mutation AddBooking($trip_id: uuid!, $seats_booked: smallint!) {
+  insert_bookings_one(object: {trip_id: $trip_id, seats_booked: $seats_booked}) {
+    id
+  }
+}
+`;
 
 const Details = () => {
-  const rentalsList = {
-    attributes: {
-      unoDescription: "2 Guests • 2 Beds • 1 Rooms",
-      dosDescription: "Wifi • Kitchen • Living Area",
-    },
-  };
   let isMobile = useMediaQuery("(max-width:850px)");
-  const { checkIn, setCheckIn, checkOut, setCheckOut, guests, setGuests } =
-    useContext(searchContext);
+  const nhost = useNhostClient();
+  let [searchParams, setSearchParams] = useSearchParams();
+  
+  const {
+    departure,
+    setDeparture,
+    arrival,
+    setArrival,
+    departureDate,
+    setDepartureDate,
+    passengers,
+    setPassengers,
+    directions,
+    setDirections,
+  } = useContext(searchContext);
 
   const StyledRating = styled(Rating)({
     "& .MuiRating-iconFilled": {
       color: "#EB4E5F",
     },
   });
-
+  
   const navigate = useNavigate();
-  const { state: place } = useLocation();
+  const [tripData, setTripData] = useState(null);
+  const { state: trip } = useLocation();
+  const {loading: driverLoading, data: driverData, error: driverError} = useQuery(GET_USER, {
+    variables: { id: tripData?.driver_id },
+  });
 
-  const [noOfDays, setNoOfDays] = useState();
-
-  //****************************  code for no of days ***********************************
+  const driver = driverData?.user;
+  const [ AddBooking, { data: bookingData, loading: bookingLoading, error: bookingError }]  = useMutation(ADD_BOOKING, {
+    variables: { trip_id: tripData?.id, seats_booked: passengers},
+  });
+  
   useEffect(() => {
-    var today = new Date(
-      checkIn.split("-")[0],
-      checkIn.split("-")[1] - 1,
-      checkIn.split("-")[2]
-    );
+    if(trip) {
+      setTripData(trip);
+    } else {
+      console.log(searchParams.get("trip"));
+    }
+  }, [trip, searchParams]);
 
-    var date2 = new Date(
-      checkOut.split("-")[0],
-      checkOut.split("-")[1] - 1,
-      checkOut.split("-")[2]
-    );
-
-    var timeDiff = Math.abs(date2.getTime() - today.getTime());
-    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
-    setNoOfDays(diffDays);
-  }, [checkIn, checkOut]);
-
-  //***********************************   Styles *****************************************
+  useEffect(() => {
+    if(bookingData?.insert_bookings_one?.id) {
+      window.location.replace(`${nhost.functions.url}/payment?booking=${bookingData.insert_bookings_one.id}`);
+      console.log(bookingData.insert_bookings_one.id);
+    }
+  }, [bookingData]);
 
   const styles = {
     logo: {
@@ -79,8 +112,10 @@ const Details = () => {
       borderTop: "1px solid rgb(230, 229, 229)",
       mb: "0px",
     },
-    image_div: {
-      marginTop: 4,
+    map_div: {
+      width: "100%",
+      height: "100%",
+      marginBottom: "1rem",
     },
     card: {
       padding: "1.5rem",
@@ -114,97 +149,19 @@ const Details = () => {
       fontSize: "0.75rem",
       fontWeight: "bold",
       color: "rgba(0, 0, 0, 0.842)",
-      padding: "0.75rem",
       margin: 1,
       height: "2.75rem",
     },
   };
 
-  // ****************** Connecting with Blockchain and functions **************************
 
-  const dayPrice = place.rating ? Number(place.rating) / 50 : 0.07;
-  const [loading, setLoading] = useState(false);
-  const handleSuccess = () => {
-    console.log({
-      type: "success",
-      message: `Nice! You are going to ${place.location_string}!!`,
-      title: "Booking Succesful",
-      position: "topR",
-    });
-  };
-  const handleAccount = () => {
-    console.log({
-      type: "error",
-      message: "To book a rental you must connect a wallet",
-      title: "Connect Your Wallet",
-      position: "topR",
-    });
-  };
-
-  const handleError = (msg) => {
-    console.log({
-      type: "error",
-      message: `${msg}`,
-      title: "Booking Failed",
-      position: "topR",
-    });
-  };
-
-  const bookRental = async (name, destination, checkIn, checkOut, imageUrl) => {
-    let options = {
-      contractAddress: process.env.REACT_APP_CONTRACT_ADDRESS,
-      functionName: "addNewBooking",
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "string",
-              name: "name",
-              type: "string",
-            },
-            {
-              internalType: "string",
-              name: "destination",
-              type: "string",
-            },
-            {
-              internalType: "string",
-              name: "checkIn",
-              type: "string",
-            },
-            {
-              internalType: "string",
-              name: "checkOut",
-              type: "string",
-            },
-            {
-              internalType: "string",
-              name: "imageUrl",
-              type: "string",
-            },
-          ],
-          name: "addNewBooking",
-          outputs: [],
-          stateMutability: "payable",
-          type: "function",
-        },
-      ],
-      params: {
-        name,
-        destination,
-        checkIn,
-        checkOut,
-        imageUrl,
-      },
-    };
-    setLoading(true);
-
-    setLoading(false);
-  };
-  const account = true;
+ 
+  if(!tripData) {
+    return <div>Loading...</div>
+  } 
   return (
     <Box>
-      <Container
+    <Container
         minWidth="xl"
         sx={{
           display: "flex",
@@ -222,90 +179,24 @@ const Details = () => {
             ></img>
           </Link>
         </Box>
-        <Box display="flex" alignItems="center">
-          <Button />
-          {account && (
-            <IconButton
-              sx={{ color: "#EB4E5F" }}
-              onClick={() => navigate("/trip")}
-            >
-              <PersonIcon />
-            </IconButton>
-          )}
-        </Box>
+        <Avatar color="primary"/>
       </Container>
-
       <Divider />
       <Container
         sx={{ mt: 2 }}
         // style={{ margin: "0 15vw 0 15vw", marginTop: "2vh" }}
       >
-        <Typography variant={isMobile ? "h5" : "h4"}>
-          {place.autobroaden_label}
+        <Typography variant={isMobile ? "h6" : "h5"}>
+          <EmojiFlagsIcon color="primary"/> {tripData.departure_address}<br/>
+          <KeyboardArrowDownIcon/><br/>
+          <SportsScoreIcon color="secondary"/> {tripData.arrival_address}
         </Typography>
-        <Box
-          style={{
-            display: "flex",
-            alignItems: "center",
-            fontSize: "20px",
-            marginTop: 2,
-          }}
-        >
-          <StyledRating
-            name="read-only"
-            value={Number(place.rating)}
-            readOnly
-            precision={0.5}
-            size="small"
-          />
-          <span
-            style={{
-              marginLeft: "0.5rem",
-              fontSize: "15px",
-            }}
-          >
-            {Number(place.rating)}
-          </span>
-          <span
-            style={{ color: "gray", marginLeft: "0.2rem", fontSize: "17px" }}
-          >
-            ({place.num_reviews} reviews)
-          </span>
-
-          <Box
-            style={{
-              color: "gray",
-              marginLeft: "0.75rem",
-              fontSize: "17px",
-            }}
-          >
-            {place.location_string.substr(0, 15)}
-          </Box>
-        </Box>
-
-        <Box sx={styles.image_div}>
-          <img
-            style={{
-              width: "50rem",
-              maxHeight: "35rem",
-              borderRadius: "15px",
-              ...(isMobile && {
-                width: "100%",
-              }),
-            }}
-            src={
-              place.photo
-                ? place.photo.images.original.url
-                : "https://imgs.search.brave.com/eoIZlg2L0ttNGXCr45Nq_l3TtsSqY7MQ3YlS5n6jIqs/rs:fit:789:883:1/g:ce/aHR0cHM6Ly9sZWlm/ZXJwcm9wZXJ0aWVz/LmNvbS93cC1jb250/ZW50L3VwbG9hZHMv/Tk8tSU1BR0UtQVZB/SUxBQkxFLmpwZw"
-            }
-            alt="place"
-          />
-        </Box>
+        
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            mt: 4,
+            mt: "2rem",
             position: "relative",
           }}
         >
@@ -319,38 +210,91 @@ const Details = () => {
             }}
           >
             <Typography variant={isMobile ? "h6" : "h5"}>
-              {place.name}
+              {driver?.displayName}
             </Typography>
-            <Typography variant="body1" color="gray">
-              {rentalsList.attributes.unoDescription}
-            </Typography>
-            <Typography variant="body1" color="gray">
-              {rentalsList.attributes.dosDescription}
-            </Typography>
-            <Divider sx={{ mt: 3, mb: 3 }} />
-
-            <Box display="flex" sx={{ mb: 2 }}>
-              <MeetingRoomOutlined />
-              <Typography variant="body1" color="initial" sx={{ ml: 2 }}>
-                Self check-in
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                width: "100%",
+              }}>
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "20px",
+                  marginTop: 2,
+                }}
+              >
+                <StyledRating
+                  name="read-only"
+                  value={driver?.rating}
+                  readOnly
+                  precision={0.5}
+                  size="small"
+                />
+                <span
+                  style={{
+                    marginLeft: "0.5rem",
+                    fontSize: "15px",
+                  }}
+                >
+                  {driver?.rating}
+                </span>
+                <span
+                  style={{ color: "gray", marginLeft: "0.2rem", fontSize: "17px" }}
+                >
+                  ({driver?.reviews_count} notes)
+                </span>
+              </Box>
+              <Typography>
+                  <CalendarTodayIcon fontSize="small" /> Départ le {new Date(tripData.departure_time).toLocaleDateString()} à {new Date(tripData.departure_time).toLocaleTimeString()}
               </Typography>
             </Box>
-            <Box display="flex" sx={{ mb: 2 }}>
-              <LocalParkingOutlined />
-              <Typography variant="body1" color="initial" sx={{ ml: 2 }}>
-                Park for free
+            <Divider sx={{ mt: 3, mb: 3 }} />
+            <Box sx={styles.map_div}>
+              <GoogleMap
+                zoom={5}
+                mapContainerStyle={{ width: '100%', height: '100%' }}
+                options={{
+                  zoomControl: false,
+                  streetViewControl: false,
+                  mapTypeControl: false,
+                  fullscreenControl: false,
+                }}
+              >
+                {directions && (
+                  <DirectionsRenderer directions={directions} />
+                )}
+              </GoogleMap>
+            </Box>
+            <Box sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}>
+              <Typography variant="overline">
+                Temps de trajet estimé: <b>{directions?.routes[0]?.legs[0]?.duration?.text}</b> - Distance: <b>{directions?.routes[0]?.legs[0]?.distance?.text}</b>
               </Typography>
             </Box>
             <Divider sx={{ mt: 3, mb: 3 }} />
-
-            <Typography variant="body1" color="black">
-              FREE NETFLIX . Private, Cozy, Clean, Comfortable Room <br />
-              We offer Weakly and Monthly Discounts
-              <br />
-              Central A/C and Heat. Flat Screen TV w many free channels. Fast
-              WiFi.
-            </Typography>
-          </Box>
+            <Box display="flex" sx={{ mb: 2 }}>
+              <AirlineSeatReclineNormalIcon />
+              <Typography variant="body1" color="initial" sx={{ ml: 2 }}>
+              {tripData.available_seat - tripData.bookings_aggregate.aggregate.sum.seats_booked} places disponibles (total {tripData.available_seat})
+              </Typography>
+            </Box>
+            <Divider sx={{ mt: 3, mb: 3 }} />
+            <Box display="flex" sx={{ mb: 2 }}>
+              <CreditCardIcon />
+              <Typography variant="body1" color="initial" sx={{ ml: 2 }}>
+                Paiement en ligne
+              </Typography>
+            </Box>
+            <Divider sx={{ mt: 3, mb: 3 }} />
+          
+          </Box><br/>
           {isMobile ? (
             <Paper
               sx={{
@@ -364,24 +308,9 @@ const Details = () => {
                 ml: -3,
               }}
             >
-              <Box style={{ display: "flex" }}>
-                {(
-                  (place.rating ? Number(place.rating) / 50 : 0.07) * noOfDays
-                ).toFixed(2)}
-              </Box>
               <LoadingButton
-                loading={loading}
-                onClick={() => {
-                  if (account)
-                    bookRental(
-                      place.name,
-                      place.location_string,
-                      checkIn,
-                      checkOut,
-                      place.photo.images.original.url
-                    );
-                  else handleAccount();
-                }}
+                loading={false}
+                onClick={() => {}}
                 variant="text"
                 sx={{
                   color: "#fff",
@@ -393,86 +322,11 @@ const Details = () => {
                   },
                 }}
               >
-                Book Now
+                Réserver et payer
               </LoadingButton>
             </Paper>
           ) : (
             <Box sx={styles.card}>
-              <Box sx={styles.card_top}>
-                <Box display="flex">
-                  <Box sx={styles.price_div}>
-                    {place.rating ? Number(place.rating) / 50 : 0.07} / Day
-                  </Box>
-                </Box>
-                <Box sx={styles.card_rating}>
-                  <StyledRating
-                    name="read-only"
-                    value={place.rating / 5}
-                    precision={0.1}
-                    readOnly
-                    max={1}
-                  />
-                  <span
-                    style={{
-                      marginLeft: "5px",
-                      fontSize: "1rem",
-                    }}
-                  >
-                    {place.rating}
-                  </span>
-                  <span
-                    style={{
-                      color: "gray",
-                      marginLeft: "5px",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    ({place.num_reviews} reviews)
-                  </span>
-                </Box>
-              </Box>
-              <Divider sx={{ mt: 2 }} />
-              <Box sx={styles.description}>
-                <Box style={{ display: "flex", flexDirection: "column" }}>
-                  <Box sx={styles.input}>
-                    Check-in
-                    <TextField
-                      variant="standard"
-                      type="date"
-                      fullWidth
-                      InputProps={{ disableUnderline: true }}
-                      onChange={(e) => {
-                        setCheckIn(e.target.value);
-                      }}
-                      value={checkIn}
-                    />
-                  </Box>
-                  <Box sx={styles.input}>
-                    Check Out
-                    <TextField
-                      variant="standard"
-                      type="date"
-                      fullWidth
-                      InputProps={{ disableUnderline: true }}
-                      onChange={(e) => {
-                        setCheckOut(e.target.value);
-                      }}
-                      value={checkOut}
-                    />
-                  </Box>
-                </Box>
-                <Box sx={styles.input}>
-                  Guests
-                  <InputBase
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                    type="number"
-                    fullWidth
-                    inputProps={{ min: 1 }}
-                    sx={{ padding: "5px" }}
-                  />
-                </Box>
-              </Box>
               <Box
                 sx={{
                   display: "flex",
@@ -483,21 +337,25 @@ const Details = () => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
+                    alignItems: "center",
                     marginBottom: "2.75rem",
                     marginTop: "1.75rem",
                   }}
                 >
-                  <Box style={{ display: "flex" }}>
-                    {place.rating ? Number(place.rating) / 50 : 0.07} x{" "}
-                    {noOfDays}
-                    &nbsp; Days
+                  <Box style={styles.input}>
+                      <TextField
+                      value={passengers}
+                      label="Passagers"
+                      onChange={(e) => setPassengers(e.target.value)}
+                      type="number"
+                      variant="standard"
+                      inputProps={{ min: 1, max: tripData.available_seat }}
+                      sx={{ padding: "5px" }}
+                    />
                   </Box>
-                  <Box style={{ display: "flex" }}>
-                    {(
-                      (place.rating ? Number(place.rating) / 50 : 0.07) *
-                      noOfDays
-                    ).toFixed(2)}
-                  </Box>
+                  <Typography>
+                    x {tripData.price_per_seat} €
+                  </Typography>
                 </Box>
                 <Divider sx={{ mb: "1.75rem" }} />
                 <Box
@@ -510,26 +368,16 @@ const Details = () => {
                   <Typography variant="h6" color="initial">
                     Total :
                   </Typography>
-                  <Box style={{ display: "flex", alignItems: "center" }}>
-                    {(
-                      (place.rating ? Number(place.rating) / 50 : 0.07) *
-                      noOfDays
-                    ).toFixed(2)}
-                  </Box>
+                  <Typography>
+                    {tripData.price_per_seat * passengers} €
+                  </Typography>
                 </Box>
                 <LoadingButton
                   fullWidth
-                  loading={loading}
-                  onClick={() => {
-                    if (account)
-                      bookRental(
-                        place.name,
-                        place.location_string,
-                        checkIn,
-                        checkOut,
-                        place.photo.images.original.url
-                      );
-                    else handleAccount();
+                  loading={driverLoading || bookingLoading}
+                  onClick={(e)=>{
+                    e.preventDefault()
+                    AddBooking()
                   }}
                   variant="text"
                   sx={{
@@ -541,7 +389,7 @@ const Details = () => {
                     },
                   }}
                 >
-                  Book Now
+                  Réserver et payer
                 </LoadingButton>
               </Box>
             </Box>

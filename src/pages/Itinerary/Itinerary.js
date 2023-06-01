@@ -24,6 +24,7 @@ import DateAndTime from "./DateAndTime";
 import {useEffect, useState} from "react";
 import { gql, useMutation } from '@apollo/client'
 import LinearProgress from '@mui/material/LinearProgress';
+import {useFileUpload} from "@nhost/react"
 import {
   GoogleMap,
   Marker,
@@ -37,6 +38,7 @@ mutation AddTrip($trip: trips_insert_input!) {
   insert_trips(objects: [$trip]){returning {id}}
 }
 `;
+
 
 export default function Itinerary() {
   let isMedium = useMediaQuery("(max-width:900px)");
@@ -82,10 +84,10 @@ export default function Itinerary() {
       addTrip({
         variables: {
           trip: {
-            departure_address: formData.departure?.place_id,
+            departure_address: formData.departure?.formatted_address,
             departure_lat: formData.departure?.geometry?.location?.lat(),
             departure_long: formData.departure?.geometry?.location?.lng(),
-            arrival_address: formData.arrival?.place_id,
+            arrival_address: formData.arrival?.formatted_address,
             arrival_lat: formData.arrival?.geometry?.location?.lat(),
             arrival_long: formData.arrival?.geometry?.location?.lng(),
             departure_time: formData?.departureDate?.$d?.toISOString(),
