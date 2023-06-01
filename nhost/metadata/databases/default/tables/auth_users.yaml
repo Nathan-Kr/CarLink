@@ -169,6 +169,17 @@ array_relationships:
         table:
           name: user_providers
           schema: auth
+computed_fields:
+  - name: rating
+    definition:
+      function:
+        name: user_rating
+        schema: public
+  - name: reviews_count
+    definition:
+      function:
+        name: user_reviews_count
+        schema: public
 select_permissions:
   - role: public
     permission:

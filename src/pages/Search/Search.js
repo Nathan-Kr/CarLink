@@ -28,10 +28,10 @@ query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: floa
   get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong}) {
     id
     driver_id
-    departure_maps_id
+    departure_address
     departure_lat
     departure_long
-    arrival_maps_id
+    arrival_address
     arrival_lat
     arrival_long
     departure_time

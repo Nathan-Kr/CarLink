@@ -82,10 +82,10 @@ export default function Itinerary() {
       addTrip({
         variables: {
           trip: {
-            departure_maps_id: formData.departure?.place_id,
+            departure_address: formData.departure?.place_id,
             departure_lat: formData.departure?.geometry?.location?.lat(),
             departure_long: formData.departure?.geometry?.location?.lng(),
-            arrival_maps_id: formData.arrival?.place_id,
+            arrival_address: formData.arrival?.place_id,
             arrival_lat: formData.arrival?.geometry?.location?.lat(),
             arrival_long: formData.arrival?.geometry?.location?.lng(),
             departure_time: formData?.departureDate?.$d?.toISOString(),
@@ -218,7 +218,7 @@ export default function Itinerary() {
           zoom={5}
           mapContainerStyle={{ width: '100%', height: '100%' }}
           options={{
-            center: { lat: formData.departure?.geometry?.location?.lat() || 48.856614, lng: formData.departure?.geometry?.location?.lng() || 2.3522219 },
+            center: !formData.arrival && { lat: formData.departure?.geometry?.location?.lat() || 48.856614, lng: formData.departure?.geometry?.location?.lng() || 2.3522219 },
             zoomControl: false,
             streetViewControl: false,
             mapTypeControl: false,

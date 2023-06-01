@@ -8,8 +8,6 @@ insert_permissions:
       set:
         rater_id: X-Hasura-User-Id
       columns:
-        - id
-        - rater_id
         - rated_id
         - trip_id
         - rating
@@ -38,21 +36,6 @@ select_permissions:
         - comment
         - timestamp
       filter: {}
-update_permissions:
-  - role: user
-    permission:
-      columns:
-        - id
-        - rater_id
-        - rated_id
-        - trip_id
-        - rating
-        - comment
-        - timestamp
-      filter: {}
-      check: null
-      set:
-        rater_id: X-Hasura-User-Id
 delete_permissions:
   - role: user
     permission:

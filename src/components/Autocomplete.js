@@ -96,7 +96,7 @@ export default function GoogleMapsAutocomplete({placeholder, onPlaceChanged, und
             noOptionsText="Pas de résultats"
             onChange={async (event, newValue) => {
                 setOptions(newValue ? [newValue, ...options] : options);
-                onPlaceChanged(await geocodeByPlaceID(newValue.place_id));
+                onPlaceChanged(newValue && (await geocodeByPlaceID(newValue.place_id)));
                 setValue(newValue);
             }}
             onInputChange={(event, newInputValue) => {

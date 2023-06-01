@@ -82,7 +82,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
             justifyContent: "space-evenly",
             alignItems: "center",
             paddingLeft: "30px",
-            width: "45rem",
+            width: "55rem",
 
             ...(isMedium && {
                 position: "absolute",

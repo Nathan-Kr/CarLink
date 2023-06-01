@@ -30,8 +30,8 @@ insert_permissions:
       set:
         driver_id: X-Hasura-User-Id
       columns:
-        - departure_maps_id
-        - arrival_maps_id
+        - departure_address
+        - arrival_address
         - departure_time
         - price_per_seat
         - available_seat
@@ -46,8 +46,8 @@ select_permissions:
       columns:
         - id
         - driver_id
-        - departure_maps_id
-        - arrival_maps_id
+        - departure_address
+        - arrival_address
         - departure_time
         - price_per_seat
         - available_seat
@@ -62,8 +62,8 @@ select_permissions:
       columns:
         - id
         - driver_id
-        - departure_maps_id
-        - arrival_maps_id
+        - departure_address
+        - arrival_address
         - departure_time
         - price_per_seat
         - available_seat
@@ -77,8 +77,8 @@ update_permissions:
   - role: user
     permission:
       columns:
-        - departure_maps_id
-        - arrival_maps_id
+        - departure_address
+        - arrival_address
         - departure_time
         - price_per_seat
         - available_seat

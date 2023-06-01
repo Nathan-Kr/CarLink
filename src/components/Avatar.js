@@ -3,8 +3,11 @@ import {MenuItem, Menu, Box, IconButton} from "@mui/material";
 import {useState} from "react";
 import {SignedIn, useUserDisplayName, useSignOut, useAuthenticated} from "@nhost/react";
 import PersonIcon from "@mui/icons-material/Person";
+import MessageIcon from '@mui/icons-material/Message';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import Tooltip from "@mui/material/Tooltip";
 import {useNavigate, useLocation} from "react-router-dom";
+import React from "react";
 
 export const Avatar = ({color}) => {
     const navigate = useNavigate();
@@ -33,6 +36,12 @@ export const Avatar = ({color}) => {
                         <PersonIcon  sx={{ color: color }}/>
                 </IconButton>
             </Tooltip>
+            <IconButton sx={{mr:3}}>
+                <NotificationsIcon sx={{ color: color }}/>
+            </IconButton>
+            <IconButton sx={{mr:1}}>
+                <MessageIcon sx={{ color: color }}/>
+            </IconButton>
             <Menu
                 sx={{ mt: '45px' }}
                 id="menu-appbar"

@@ -20,10 +20,10 @@ query getTrips($driver_id: uuid) {
   trips(where: {driver_id: {_eq: $driver_id}}) {
     id
     driver_id
-    departure_maps_id
+    departure_address
     departure_lat
     departure_long
-    arrival_maps_id
+    arrival_address
     arrival_lat
     arrival_long
     departure_time
@@ -117,7 +117,7 @@ const Reservations = () => {
                 >
                   <center>
                     <Typography variant="body1" color="initial">
-                      {trip.departure_maps_id.substring(0,20)} to {trip.arrival_maps_id.substring(0,20)}
+                      {trip.departure_address.substring(0,20)} to {trip.arrival_address.substring(0,20)}
                     </Typography>
                     <Typography variant="body2" color="gray">
                       {trip.departure_time}
