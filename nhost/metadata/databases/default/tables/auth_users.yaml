@@ -92,20 +92,6 @@ object_relationships:
     using:
       foreign_key_constraint_on: default_role
 array_relationships:
-  - name: Balance
-    using:
-      foreign_key_constraint_on:
-        column: user_id
-        table:
-          name: balances
-          schema: public
-  - name: Balances
-    using:
-      foreign_key_constraint_on:
-        column: user_id
-        table:
-          name: balances
-          schema: public
   - name: balance
     using:
       foreign_key_constraint_on:
@@ -113,21 +99,7 @@ array_relationships:
         table:
           name: balances
           schema: public
-  - name: balances
-    using:
-      foreign_key_constraint_on:
-        column: user_id
-        table:
-          name: balances
-          schema: public
   - name: booking
-    using:
-      foreign_key_constraint_on:
-        column: passenger_id
-        table:
-          name: bookings
-          schema: public
-  - name: bookings
     using:
       foreign_key_constraint_on:
         column: passenger_id
