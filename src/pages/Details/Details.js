@@ -10,7 +10,7 @@ import {
   Container,
   useMediaQuery,
   Paper,
-  IconButton, Button,
+  IconButton, Button, Skeleton, Alert,
 } from "@mui/material";
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -29,7 +29,9 @@ import { useNavigate } from "react-router-dom";
 import { Avatar } from "../../components/Avatar";
 import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
 import { gql, useMutation, useQuery } from "@apollo/client";
-import { useNhostClient } from "@nhost/react";
+import { useNhostClient, useUserId } from "@nhost/react";
+import { da } from "date-fns/locale";
+import { set } from "date-fns";
 const GET_USER = gql`
 query getUser($id: uuid!) {
   user(id: $id) {
@@ -48,11 +50,44 @@ mutation AddBooking($trip_id: uuid!, $seats_booked: smallint!) {
 }
 `;
 
+const GET_TRIP = gql`
+query GetTrip($id: uuid!) {
+  trips_by_pk(id: $id) {
+    id
+    driver_id
+    departure_address
+    departure_lat
+    departure_long
+    arrival_address
+    arrival_lat
+    arrival_long
+    departure_time
+    price_per_seat
+    available_seat
+    finished
+    user {
+      rating
+      displayName
+      reviews_count
+    }
+    bookings_aggregate {
+      aggregate {
+        sum {
+          seats_booked
+        }
+      }
+    }
+  }
+}
+`;
+
 const Details = () => {
   let isMobile = useMediaQuery("(max-width:850px)");
+  const userId = useUserId();
   const nhost = useNhostClient();
   let [searchParams, setSearchParams] = useSearchParams();
-  
+  const navigate = useNavigate();
+
   const {
     departure,
     setDeparture,
@@ -72,8 +107,10 @@ const Details = () => {
     },
   });
   
-  const navigate = useNavigate();
+  const error = searchParams.get("success") === "false";
+  console.log(error)
   const [tripData, setTripData] = useState(null);
+  const [pendingRedirect, setPendingRedirect] = useState(false);
   const { state: trip } = useLocation();
   const {loading: driverLoading, data: driverData, error: driverError} = useQuery(GET_USER, {
     variables: { id: tripData?.driver_id },
@@ -88,7 +125,18 @@ const Details = () => {
     if(trip) {
       setTripData(trip);
     } else {
-      console.log(searchParams.get("trip"));
+      nhost.graphql.request(GET_TRIP, { id: searchParams.get("trip") }).then(({ data }) => {
+        setTripData(data.trips_by_pk);
+        const directionsService = new window.google.maps.DirectionsService()
+        directionsService.route(
+          {
+            origin: data.trips_by_pk.departure_address,
+            destination: data.trips_by_pk.arrival_address,
+            travelMode: window.google.maps.TravelMode.DRIVING
+          }).then((response) => {
+            setDirections(response)
+          }).catch((e) => console.log(e))
+      });
     }
   }, [trip, searchParams]);
 
@@ -154,11 +202,9 @@ const Details = () => {
     },
   };
 
+  console.log(userId)
+  console.log(tripData?.driver_id)
 
- 
-  if(!tripData) {
-    return <div>Loading...</div>
-  } 
   return (
     <Box>
     <Container
@@ -186,11 +232,18 @@ const Details = () => {
         sx={{ mt: 2 }}
         // style={{ margin: "0 15vw 0 15vw", marginTop: "2vh" }}
       >
+      {tripData ?
         <Typography variant={isMobile ? "h6" : "h5"}>
           <EmojiFlagsIcon color="primary"/> {tripData.departure_address}<br/>
           <KeyboardArrowDownIcon/><br/>
           <SportsScoreIcon color="secondary"/> {tripData.arrival_address}
         </Typography>
+        :
+        <Typography variant={isMobile ? "h6" : "h5"}>
+          <Skeleton variant="text"/><br/><br/>
+          <Skeleton variant="text"/>
+        </Typography>
+      }
         
         <Box
           sx={{
@@ -216,7 +269,8 @@ const Details = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: isMobile? "flex-start" : "center",
+                flexDirection: isMobile ? "column" : "row",
                 width: "100%",
               }}>
               <Box
@@ -249,7 +303,7 @@ const Details = () => {
                 </span>
               </Box>
               <Typography>
-                  <CalendarTodayIcon fontSize="small" /> Départ le {new Date(tripData.departure_time).toLocaleDateString()} à {new Date(tripData.departure_time).toLocaleTimeString()}
+                  <CalendarTodayIcon fontSize="small" /> Départ le {tripData?(new Date(tripData.departure_time).toLocaleDateString() +  ' à ' + new Date(tripData.departure_time).toLocaleTimeString()):<Skeleton variant="text"/>}
               </Typography>
             </Box>
             <Divider sx={{ mt: 3, mb: 3 }} />
@@ -282,7 +336,7 @@ const Details = () => {
             <Box display="flex" sx={{ mb: 2 }}>
               <AirlineSeatReclineNormalIcon />
               <Typography variant="body1" color="initial" sx={{ ml: 2 }}>
-              {tripData.available_seat - tripData.bookings_aggregate.aggregate.sum.seats_booked} places disponibles (total {tripData.available_seat})
+                {tripData ? (tripData.available_seat - tripData.bookings_aggregate.aggregate.sum.seats_booked) : ''} places disponibles (total {tripData?.available_seat || ''})
               </Typography>
             </Box>
             <Divider sx={{ mt: 3, mb: 3 }} />
@@ -308,10 +362,27 @@ const Details = () => {
                 ml: -3,
               }}
             >
+              {error?<Alert severity="error" sx={{mb: 2}}>Vous avez annulé le paiement,
+              vous pouvez annuler votre reservation ou reessayer <Link to="/account/reservations">sur cette page</Link>
+              </Alert>:
+              <React.Fragment>
+              <TextField
+                      value={passengers}
+                      label="Passagers"
+                      onChange={(e) => setPassengers(e.target.value)}
+                      type="number"
+                      variant="standard"
+                      inputProps={{ min: 1, max: tripData?.available_seat || 1 }}
+                      sx={{ width: "30%" }}
+                    />
               <LoadingButton
-                loading={false}
-                onClick={() => {}}
-                variant="text"
+                disabled={bookingLoading || error || passengers > tripData?.available_seat - tripData.bookings_aggregate.aggregate.sum.seats_booked || passengers < 1}
+                loading={driverLoading || pendingRedirect}
+                onClick={(e)=>{
+                  e.preventDefault()
+                  setPendingRedirect(true)
+                  AddBooking()
+                }}
                 sx={{
                   color: "#fff",
                   bgcolor: "#d44957",
@@ -324,9 +395,15 @@ const Details = () => {
               >
                 Réserver et payer
               </LoadingButton>
+              </React.Fragment>}
             </Paper>
           ) : (
             <Box sx={styles.card}>
+            {userId === tripData?.driver_id ? (
+              <Typography variant="h6" color="initial">
+                Vous ne pouvez pas réserver votre propre trajet
+              </Typography>
+            ) : (
               <Box
                 sx={{
                   display: "flex",
@@ -349,12 +426,12 @@ const Details = () => {
                       onChange={(e) => setPassengers(e.target.value)}
                       type="number"
                       variant="standard"
-                      inputProps={{ min: 1, max: tripData.available_seat }}
+                      inputProps={{ min: 1, max: tripData?.available_seat || 1 }}
                       sx={{ padding: "5px" }}
                     />
                   </Box>
                   <Typography>
-                    x {tripData.price_per_seat} €
+                    x {tripData?.price_per_seat || ''} €
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: "1.75rem" }} />
@@ -368,15 +445,22 @@ const Details = () => {
                   <Typography variant="h6" color="initial">
                     Total :
                   </Typography>
-                  <Typography>
+                  {tripData?
+                    <Typography>
                     {tripData.price_per_seat * passengers} €
-                  </Typography>
+                  </Typography>:
+                  <Skeleton variant="text"/>}
                 </Box>
+                {error&&<Alert severity="error" sx={{mb: 2}}>Vous avez annulé le paiement,
+                 vous pouvez annuler votre reservation ou reessayer <Link to="/account/reservations">sur cette page</Link>
+                 </Alert>}
                 <LoadingButton
                   fullWidth
-                  loading={driverLoading || bookingLoading}
+                  disabled={bookingLoading || error}
+                  loading={driverLoading || pendingRedirect}
                   onClick={(e)=>{
                     e.preventDefault()
+                    setPendingRedirect(true)
                     AddBooking()
                   }}
                   variant="text"
@@ -391,7 +475,7 @@ const Details = () => {
                 >
                   Réserver et payer
                 </LoadingButton>
-              </Box>
+              </Box>)}
             </Box>
           )}
         </Box>

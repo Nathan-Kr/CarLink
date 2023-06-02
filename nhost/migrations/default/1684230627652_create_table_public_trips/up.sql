@@ -16,5 +16,7 @@ SQRT(
     POW(111.2 * (endlong - arrival_long) * COS(arrival_lat / 57.3), 2)
 ) < bound
 AND
+trips.available_seat > (SELECT SUM(seats_booked) FROM bookings WHERE trip_id = trips.id)
+AND
 DATE_TRUNC('day', departure_time) = DATE_TRUNC('day', departure_date);
-$function$;
+$function$

@@ -153,7 +153,7 @@ const TripDetails = ({ selected, trip, refProp, isMobile }) => {
           </Box>
           <Box sx={styles.bottomButton}>
             <Link
-              to={"/details"}
+              to={"/details?trip=" + trip.id}
               style={{ textDecoration: "none" }}
               state={trip}
             >
