@@ -92,7 +92,7 @@ const Search = () => {
       "startlong": departure?.geometry?.location.lng(),
       "endlat": arrival?.geometry?.location.lat(),
       "endlong": arrival?.geometry?.location.lng(),
-      "departure_date": departureDate
+      "departure_date": departureDate?.$y + "-" + (departureDate?.$M + 1) + "-" + departureDate?.$D + "T00:00:00.000Z"
     }
   });
   const trips = data?.get_nearby_trips || [];
@@ -211,7 +211,7 @@ const Search = () => {
           </Typography>
           <Box sx={styles.vl} />
           <Typography variant="body1" sx={styles.filter}>
-            {departureDate}
+            {departureDate?.$d?.toLocaleDateString()}
           </Typography>
           <Box sx={styles.vl} />
           <Typography variant="body1" sx={styles.filter}>
@@ -273,8 +273,6 @@ const Search = () => {
                   <Box>
                     <TripDetails
                       trip={trip}
-                      selected={Number(1) === i}
-                      refProp={elRefs[i]}
                       isMobile={isMobile}
                     />
                   </Box>

@@ -138,8 +138,6 @@ function SwipeableEdgeDrawer(props) {
                   <TripDetails
                     isMobile={props.isMobile}
                     trip={trip}
-                    selected={Number(props.childClicked) === i}
-                    refProp={elRefs[i]}
                   />
                 </Box>
               ))}

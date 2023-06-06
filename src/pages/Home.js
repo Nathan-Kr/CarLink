@@ -17,6 +17,9 @@ import {searchContext, searchFilterContext} from "../Context";
 import PersonIcon from "@mui/icons-material/Person";
 import {Avatar} from "../components/Avatar";
 import {Link as RouterLink} from "react-router-dom";
+import {LocalizationProvider, DatePicker} from "@mui/x-date-pickers";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
 
 const Home = ({onLoad, onPlaceChanged}) => {
     let isMedium = useMediaQuery("(max-width:900px)");
@@ -191,16 +194,17 @@ const Home = ({onLoad, onPlaceChanged}) => {
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
                     <Box sx={styles.inputs}>
                         Quand
-                        <TextField
-                            variant="standard"
-                            type="date"
-                            fullWidth
-                            InputProps={{disableUnderline: true}}
-                            onChange={(e) => {
-                                setDepartureDate(e.target.value);
-                            }}
-                            value={departureDate}
-                        />
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                disablePast
+                                slotProps={{ textField: { fullWidth: true, variant: "standard", InputProps: {disableUnderline: true}} }}
+                                value={departureDate}
+                                onChange={(date) => {
+                                    console.log(date)
+                                    setDepartureDate(date);
+                                }}
+                            />
+                        </LocalizationProvider>
                     </Box>
 
                     <Box sx={isMobile ? styles.hl : styles.vl}/>

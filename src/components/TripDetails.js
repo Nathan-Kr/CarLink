@@ -1,184 +1,77 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Rating, Button, Box, useMediaQuery } from "@mui/material";
-import styled from "styled-components";
-import Icon from "antd/es/icon";
+import {Rating, Button, Box, useMediaQuery, Typography, CardActionArea, CardContent} from "@mui/material";
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import EmojiFlagsIcon from "@mui/icons-material/EmojiFlags";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import Card from '@mui/material/Card';
+import { useUserId } from "@nhost/react";
 
-const TripDetails = ({ selected, trip, refProp, isMobile }) => {
-  const isSmall = useMediaQuery("(max-width:420px)");
-  console.log(trip);
-  if (selected) {
-    refProp?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
 
-  const StyledRating = styled(Rating)({
-    "& .MuiRating-iconFilled": {
-      color: "#EB4E5F",
-    },
-  });
-
-  const styles = {
-    rentalDivH: {
-      animation: "mymove 5s",
-      borderRadius: "20px",
-      "@keyframes mymove": {
-        from: {
-          backgroundColor: "#dddddd",
-        },
-
-        to: {
-          backgroundColor: "#dddddd00",
-        },
-      },
-    },
-
-    rentalDiv: {
-      display: "flex",
-      justifyContent: "space-around",
-      alignItems: "center",
-      ...(isMobile && {
-        flexDirection: "column",
-      }),
-    },
-    rentalImg: {
-      height: "200px",
-      minWidth: "300px",
-      borderRadius: "20px",
-      marginRight: "20px",
-      ...(isMobile && {
-        width: "100%",
-        m: 0,
-        height: "300px",
-      }),
-      ...(isSmall && {
-        height: "200px",
-      }),
-    },
-    rentalInfo: {
-      padding: "10px",
-      width: "100%",
-    },
-    rentalTitle: {
-      fontSize: "23px",
-      marginBottom: "15px",
-      ...(isMobile && {
-        fontSize: "18px",
-        mb: 1,
-      }),
-    },
-    rentalDesc: {
-      color: "gray",
-      marginTop: "5px",
-      ...(isMobile && {
-        fontSize: "14px",
-      }),
-    },
-    bottomButton: {
-      marginTop: "20px",
-      justifyContent: "space-between",
-      display: "flex",
-      width: "100%",
-      alignItems: "center",
-      ...(isMobile && {
-        fontSize: "18px",
-        mt: 1,
-      }),
-    },
-    price: {
-      display: "flex",
-      justifyContent: "end",
-      gap: "5px",
-      color: "#808080",
-      fontSize: "12px",
-    },
-  };
-
-  return (
-    <Box sx={selected && styles.rentalDivH}>
-      <Box sx={styles.rentalDiv}>
-        <img
-          style={styles.rentalImg}
-          src={"https://www.google.fr/url?sa=i&url=https%3A%2F%2Ffr.vecteezy.com%2Ffree-png-fr%2Fauto&psig=AOvVaw2RpylehhMkGp7bo9io_6au&ust=1685617073299000&source=images&cd=vfe&ved=0CA4QjRxqFwoTCJjQ2Yezn_8CFQAAAAAdAAAAABAD"}
-          alt="place"
-        />
-        <Box sx={styles.rentalInfo}>
-          <Box sx={styles.rentalTitle}>{trip.departure_address}</Box>
-          <Box sx={styles.rentalDesc}>
-            {trip.departure_address}
-          </Box>
-          <Box sx={styles.rentalDesc}>
-            {trip.departure_maps_id}
-          </Box>
-          <Box
-            style={{
-              marginTop: "1.5rem",
-              display: "flex",
-              alignItems: "center",
-              ...(isMobile && {
-                justifyContent: "space-between",
-              }),
-            }}
-          >
-            <StyledRating
-              name="read-only"
-              size="small"
-              value={Number(trip.rating)}
-              readOnly
-              precision={0.5}
-            />
-            <Box>
-              <span
-                style={{
-                  marginLeft: "5px",
-                  fontWeight: "bold",
-                  ...(isMobile && {
-                    fontSize: "14px",
-                  }),
-                }}
-              >
-                {Number(trip.rating)}
-              </span>
-              <span
-                style={{
-                  color: "gray",
-                  marginLeft: "5px",
-                  ...(isMobile && {
-                    fontSize: "14px",
-                  }),
-                }}
-              >
-                ({trip.num_reviews} reviews)
-              </span>
-            </Box>
-          </Box>
-          <Box sx={styles.bottomButton}>
-            <Link
+const TripDetails = ({ trip, isMobile }) => {
+    const userId = useUserId();
+    return (
+          <CardActionArea component={Link}
               to={"/details?trip=" + trip.id}
-              style={{ textDecoration: "none" }}
               state={trip}
-            >
-              <Button
-                size="small"
-                variant="outlined"
-                sx={{
-                  color: "#d44957",
-                  borderColor: "#d44957",
-                  ":hover": {
-                    borderColor: "#d44957",
-                  },
-                }}
-              >
-                Details
-              </Button>
-            </Link>
-            <Box sx={styles.price}>
-              {trip.rating ? Number(trip.rating) / 50 : 0.07} / Day
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
+          >
+            <Card sx={{ display: 'flex' }}>
+              <CardContent sx={{ flex: 1 }}>
+                <Typography variant={isMobile ? "body" : "button"}>
+                  <EmojiFlagsIcon color="primary"/> {trip.departure_address}<br/>
+                  <KeyboardArrowDownIcon/><br/>
+                  <SportsScoreIcon color="secondary"/> {trip.arrival_address}
+                </Typography>
+                <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: "2rem",
+                    }}
+                >
+                  <Typography variant="h6" color="text.secondary">
+                    <AccessTimeIcon xs={{fontSize: "2rem"}}/> {new Date(trip.departure_time).toLocaleTimeString().slice(0,5)}
+                  </Typography>
+                    {trip.driver_id !== userId ?<Box
+                        sx={{
+                            display: "flex",
+                            alignItems: 'center',
+                            fontSize: "20px"
+                        }}
+                    >
+                        <Typography variant="subtitle1" sx={{mr: 2}}>
+                            {trip.user.displayName}
+                        </Typography>
+                        <Rating
+                            name="read-only"
+                            value={trip?.user?.rating}
+                            readOnly
+                            precision={0.5}
+                            size="small"
+                        />
+                        <span
+                            style={{
+                                marginLeft: "0.5rem",
+                                fontSize: "15px",
+                            }}
+                        >
+                          {trip?.user?.rating}
+                        </span>
+                        <span
+                            style={{color: "gray", marginLeft: "0.2rem", fontSize: "17px"}}
+                        >
+                          ({trip?.user?.reviews_count} notes)
+                        </span>
+                    </Box>:
+                    <Typography variant="subtitle1" sx={{mr: 2}}>
+                        votre trajet
+                    </Typography>}
+                  </Box>
+              </CardContent>
+            </Card>
+          </CardActionArea>
+    );
 };
 
 export default TripDetails;

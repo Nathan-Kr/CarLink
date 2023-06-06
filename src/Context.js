@@ -6,9 +6,7 @@ export const Context = ({ children }) => {
   const [departure, setDeparture] = useState("");
   const [arrival, setArrival] = useState("");
   const [directions, setDirections] = useState(null);
-  const [departureDate, setDepartureDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [departureDate, setDepartureDate] = useState(null);
   const [passengers, setPassengers] = useState(1);
   return (
     <searchContext.Provider

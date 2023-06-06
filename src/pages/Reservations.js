@@ -14,10 +14,14 @@ import logo from "../images/Logo.png";
 import mobileLogo from "../images/mobileLogo.png";
 import { gql, useQuery } from '@apollo/client'
 import { useUserId } from '@nhost/react'
+import TripDetails from "../components/TripDetails";
 
 const GET_TRIPS = gql`
 query getTrips($driver_id: uuid) {
-  trips(where: {driver_id: {_eq: $driver_id}}) {
+  trips(where: {_or: [
+    {bookings: {passenger_id: {_eq: $driver_id}}},
+    {driver_id: {_eq: $driver_id}}
+  ]}) {
     id
     driver_id
     departure_address
@@ -30,10 +34,21 @@ query getTrips($driver_id: uuid) {
     price_per_seat
     available_seat
     finished
+    user {
+      rating
+      displayName
+      reviews_count
+    }
+    bookings_aggregate {
+      aggregate {
+        sum {
+          seats_booked
+        }
+      }
+    }
   }
 }
-
-`
+`;
 
 const Reservations = () => {
   let isMobile = useMediaQuery("(max-width:850px)");
@@ -56,7 +71,6 @@ const Reservations = () => {
   const { loading, data, error } = useQuery(GET_TRIPS, {
     variables: { "driver_id": userId },
   });
-
   const trips = data?.trips
 
   return (
@@ -115,21 +129,7 @@ const Reservations = () => {
                     p: "3rem",
                   }}
                 >
-                  <center>
-                    <Typography variant="body1" color="initial">
-                      {trip.departure_address.substring(0,20)} to {trip.arrival_address.substring(0,20)}
-                    </Typography>
-                    <Typography variant="body2" color="gray">
-                      {trip.departure_time}
-                    </Typography>
-                    <Typography variant="body2" color="gray">
-                      {trip.price_per_seat}€
-                    </Typography>
-                    <Typography variant="body2" color="gray">
-                      {trip.available_seat} seats available
-                    </Typography>
-                    <Button>Annuler</Button>
-                  </center>
+                  <TripDetails trip={trip} isMobile={isMobile}/>
                 </Grid>
               ))}
             </Grid>

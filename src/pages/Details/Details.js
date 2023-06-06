@@ -32,15 +32,7 @@ import { gql, useMutation, useQuery } from "@apollo/client";
 import { useNhostClient, useUserId } from "@nhost/react";
 import { da } from "date-fns/locale";
 import { set } from "date-fns";
-const GET_USER = gql`
-query getUser($id: uuid!) {
-  user(id: $id) {
-    rating
-    reviews_count
-    displayName
-  }
-}
-`;
+
 
 const ADD_BOOKING = gql`
 mutation AddBooking($trip_id: uuid!, $seats_booked: smallint!) {
@@ -81,6 +73,18 @@ query GetTrip($id: uuid!) {
 }
 `;
 
+const GET_BOOKINGS = gql`
+query getBookings($trip_id: uuid!) {
+  bookings(where: {trip_id: {_eq: $trip_id}}) {
+    booking_status
+    id
+    passenger_id
+    seats_booked
+  }
+}
+`;
+
+
 const Details = () => {
   let isMobile = useMediaQuery("(max-width:850px)");
   const userId = useUserId();
@@ -108,15 +112,13 @@ const Details = () => {
   });
   
   const error = searchParams.get("success") === "false";
-  console.log(error)
+  const success = searchParams.get("success") === "true";
+
   const [tripData, setTripData] = useState(null);
+  const [bookings, setBookings] = useState(null);
   const [pendingRedirect, setPendingRedirect] = useState(false);
   const { state: trip } = useLocation();
-  const {loading: driverLoading, data: driverData, error: driverError} = useQuery(GET_USER, {
-    variables: { id: tripData?.driver_id },
-  });
 
-  const driver = driverData?.user;
   const [ AddBooking, { data: bookingData, loading: bookingLoading, error: bookingError }]  = useMutation(ADD_BOOKING, {
     variables: { trip_id: tripData?.id, seats_booked: passengers},
   });
@@ -139,6 +141,15 @@ const Details = () => {
       });
     }
   }, [trip, searchParams]);
+
+  useEffect(() => {
+    if(tripData && tripData?.driver_id === userId) {
+      nhost.graphql.request(GET_BOOKINGS, { trip_id: tripData.id }).then(({ data }) => {
+        setBookings(data?.bookings || []);
+      });
+    }
+  }, [tripData, userId]);
+
 
   useEffect(() => {
     if(bookingData?.insert_bookings_one?.id) {
@@ -202,9 +213,9 @@ const Details = () => {
     },
   };
 
-  console.log(userId)
-  console.log(tripData?.driver_id)
 
+  const alert = success || error
+  console.log(alert)
   return (
     <Box>
     <Container
@@ -263,7 +274,7 @@ const Details = () => {
             }}
           >
             <Typography variant={isMobile ? "h6" : "h5"}>
-              {driver?.displayName}
+              {tripData?.user?.displayName}
             </Typography>
             <Box
               sx={{
@@ -283,7 +294,7 @@ const Details = () => {
               >
                 <StyledRating
                   name="read-only"
-                  value={driver?.rating}
+                  value={tripData?.user?.rating}
                   readOnly
                   precision={0.5}
                   size="small"
@@ -294,12 +305,12 @@ const Details = () => {
                     fontSize: "15px",
                   }}
                 >
-                  {driver?.rating}
+                  {tripData?.user?.rating}
                 </span>
                 <span
                   style={{ color: "gray", marginLeft: "0.2rem", fontSize: "17px" }}
                 >
-                  ({driver?.reviews_count} notes)
+                  ({tripData?.user?.reviews_count} notes)
                 </span>
               </Box>
               <Typography>
@@ -362,8 +373,10 @@ const Details = () => {
                 ml: -3,
               }}
             >
-              {error?<Alert severity="error" sx={{mb: 2}}>Vous avez annulé le paiement,
-              vous pouvez annuler votre reservation ou reessayer <Link to="/account/reservations">sur cette page</Link>
+              {alert?<Alert severity={error?"error":"success"} sx={{mb: 2}}>
+                    {error && "Vous avez annulé le paiement, vous pouvez annuler votre reservation ou reessayer "}
+                    {success && "Votre reservation a été effectuée avec succès, vous pouvez la consulter "}
+                    <Link to="/account/reservations">sur cette page</Link>
               </Alert>:
               <React.Fragment>
               <TextField
@@ -377,7 +390,7 @@ const Details = () => {
                     />
               <LoadingButton
                 disabled={bookingLoading || error || passengers > tripData?.available_seat - tripData.bookings_aggregate.aggregate.sum.seats_booked || passengers < 1}
-                loading={driverLoading || pendingRedirect}
+                loading={pendingRedirect}
                 onClick={(e)=>{
                   e.preventDefault()
                   setPendingRedirect(true)
@@ -451,13 +464,15 @@ const Details = () => {
                   </Typography>:
                   <Skeleton variant="text"/>}
                 </Box>
-                {error&&<Alert severity="error" sx={{mb: 2}}>Vous avez annulé le paiement,
-                 vous pouvez annuler votre reservation ou reessayer <Link to="/account/reservations">sur cette page</Link>
-                 </Alert>}
+                {alert&&<Alert severity={error?"error":"success"} sx={{mb: 2}}>
+                  {error && "Vous avez annulé le paiement, vous pouvez annuler votre reservation ou reessayer "}
+                  {success && "Votre reservation a été effectuée avec succès, vous pouvez la consulter "}
+                  <Link to="/account/reservations">sur cette page</Link>
+                </Alert>}
                 <LoadingButton
                   fullWidth
-                  disabled={bookingLoading || error}
-                  loading={driverLoading || pendingRedirect}
+                  disabled={bookingLoading || alert}
+                  loading={pendingRedirect}
                   onClick={(e)=>{
                     e.preventDefault()
                     setPendingRedirect(true)

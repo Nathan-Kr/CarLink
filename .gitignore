@@ -9,3 +9,4 @@ yarn*
 package-lock.json
 functions/node_modules
 functions/package-lock.json
+.secrets
