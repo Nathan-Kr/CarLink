@@ -175,7 +175,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
             <Box display="flex" justifyContent="center">
                 <Box sx={styles.searchFields}>
                     <Box sx={styles.inputs}>
-                        Départ
+                        <Typography variant="caption">Départ</Typography>
                         <GoogleMapsAutocomplete
                             onPlaceChanged={setDeparture}
                             variant="standard"
@@ -184,7 +184,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
                     </Box>
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
                     <Box sx={styles.inputs}>
-                        Arrivée
+                        <Typography variant="caption">Arrivée</Typography>
                         <GoogleMapsAutocomplete
                             onPlaceChanged={setArrival}
                             variant="standard"
@@ -193,7 +193,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
                     </Box>
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
                     <Box sx={styles.inputs}>
-                        Quand
+                        <Typography variant="caption">Quand</Typography>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 disablePast
@@ -209,7 +209,7 @@ const Home = ({onLoad, onPlaceChanged}) => {
 
                     <Box sx={isMobile ? styles.hl : styles.vl}/>
                     <Box sx={styles.inputs}>
-                        Passagers
+                        <Typography variant="caption">Passagers</Typography>
                         {isMobile && <br/>}
                         <InputBase
                             type="number"

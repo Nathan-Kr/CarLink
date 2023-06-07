@@ -5,39 +5,53 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmojiFlagsIcon from "@mui/icons-material/EmojiFlags";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import NoCrashIcon from '@mui/icons-material/NoCrash';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import Card from '@mui/material/Card';
 import { useUserId } from "@nhost/react";
 
 
-const TripDetails = ({ trip, isMobile }) => {
+const TripDetails = ({ trip, isMobile, withDate = false }) => {
     const userId = useUserId();
     return (
           <CardActionArea component={Link}
               to={"/details?trip=" + trip.id}
               state={trip}
+              sx={{ height: "100%", minHeight: "10rem" }}
           >
-            <Card sx={{ display: 'flex' }}>
-              <CardContent sx={{ flex: 1 }}>
-                <Typography variant={isMobile ? "body" : "button"}>
+            <Card sx={{ display: 'flex', height: '100%'}}>
+              <CardContent sx={{ display: 'flex', flexDirection:"column", justifyContent: 'space-between', height: '90%', width: '100%' }}>
+                {<Typography variant={isMobile ? "body" : "button"}>
                   <EmojiFlagsIcon color="primary"/> {trip.departure_address}<br/>
                   <KeyboardArrowDownIcon/><br/>
                   <SportsScoreIcon color="secondary"/> {trip.arrival_address}
-                </Typography>
+                </Typography>}
                 <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
-                      mt: "2rem",
+                      alignItems: "center",
+                      width: "100%",
+                      mt: "1rem"
                     }}
                 >
+                  {withDate&&<Typography variant="h6" color="text.secondary">
+                    <CalendarTodayIcon sx={{fontSize: "1rem"}}/>&nbsp;
+                    {new Date(trip.departure_time).toLocaleDateString()}
+                  </Typography>}
                   <Typography variant="h6" color="text.secondary">
-                    <AccessTimeIcon xs={{fontSize: "2rem"}}/> {new Date(trip.departure_time).toLocaleTimeString().slice(0,5)}
+                    {trip.finished?
+                      <NoCrashIcon sx={{fontSize: "1rem"}}/>:
+                      <AccessTimeIcon sx={{fontSize: "1rem"}}/>}
+                    &nbsp;
+                    {trip.finished?
+                      "Terminé":
+                      new Date(trip.departure_time).toLocaleTimeString().slice(0,5)}
                   </Typography>
                     {trip.driver_id !== userId ?<Box
                         sx={{
                             display: "flex",
-                            alignItems: 'center',
-                            fontSize: "20px"
+                            alignItems: "center",
                         }}
                     >
                         <Typography variant="subtitle1" sx={{mr: 2}}>
@@ -64,7 +78,7 @@ const TripDetails = ({ trip, isMobile }) => {
                           ({trip?.user?.reviews_count} notes)
                         </span>
                     </Box>:
-                    <Typography variant="subtitle1" sx={{mr: 2}}>
+                    <Typography variant="subtitle1">
                         votre trajet
                     </Typography>}
                   </Box>

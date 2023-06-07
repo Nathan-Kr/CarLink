@@ -18,10 +18,7 @@ import TripDetails from "../components/TripDetails";
 
 const GET_TRIPS = gql`
 query getTrips($driver_id: uuid) {
-  trips(where: {_or: [
-    {bookings: {passenger_id: {_eq: $driver_id}}},
-    {driver_id: {_eq: $driver_id}}
-  ]}) {
+  trips(where: {_or: [{bookings: {passenger_id: {_eq: $driver_id}}}, {driver_id: {_eq: $driver_id}}]}, order_by: {departure_time: desc}) {
     id
     driver_id
     departure_address
@@ -122,14 +119,13 @@ const Reservations = () => {
                 <Grid
                   item
                   xs={12}
-                  md={4}
+                  md={6}
                   sx={{
-                    width: "350px  ",
-                    height: "300px ",
-                    p: "3rem",
+                    height: "15rem",
+                    padding: "1rem",
                   }}
                 >
-                  <TripDetails trip={trip} isMobile={isMobile}/>
+                  <TripDetails trip={trip} isMobile={isMobile} withDate/>
                 </Grid>
               ))}
             </Grid>

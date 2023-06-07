@@ -30,8 +30,11 @@ import { Avatar } from "../../components/Avatar";
 import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useNhostClient, useUserId } from "@nhost/react";
-import { da } from "date-fns/locale";
-import { set } from "date-fns";
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
 
 const ADD_BOOKING = gql`
@@ -74,12 +77,44 @@ query GetTrip($id: uuid!) {
 `;
 
 const GET_BOOKINGS = gql`
-query getBookings($trip_id: uuid!) {
-  bookings(where: {trip_id: {_eq: $trip_id}}) {
+query getBookings($trip_id: uuid!, $user_id: uuid!) {
+  bookings(where: {_and: [{trip_id: {_eq: $trip_id}}, {payment_status: {_eq: "success"}}, {trip: {driver_id: {_eq: $user_id}}}]}) {
     booking_status
     id
     passenger_id
     seats_booked
+    user {
+      displayName
+    }
+  }
+}
+`;
+
+const GET_USER_BOOKINGS = gql`
+query getUserBookings($trip_id: uuid!, $user_id: uuid!) {
+  bookings(where: {_and: [{trip_id: {_eq: $trip_id}}, {passenger_id: {_eq: $user_id}}]}) {
+    booking_status
+    payment_status
+    seats_booked
+    id
+  }
+}
+`;
+
+const DELETE_USER_BOOKING = gql`
+mutation MyMutation($id: uuid = "", $user_id: uuid = "") {
+  delete_bookings_by_pk(id: $id) {
+    trip_id
+    trip {
+      bookings(where: {passenger_id: {_eq: $user_id}}) {
+        trip_id
+        seats_booked
+        payment_status
+        passenger_id
+        id
+        booking_status
+      }
+    }
   }
 }
 `;
@@ -111,14 +146,16 @@ const Details = () => {
     },
   });
   
-  const error = searchParams.get("success") === "false";
-  const success = searchParams.get("success") === "true";
-
+  const [deleteModal, setDeleteModal] = React.useState(null);
+  const [cancelModal, setCancelModal] = React.useState(false);
   const [tripData, setTripData] = useState(null);
-  const [bookings, setBookings] = useState(null);
+  const [bookings, setBookings] = useState([]);
   const [pendingRedirect, setPendingRedirect] = useState(false);
   const { state: trip } = useLocation();
 
+  const error = searchParams.get("success") === "false" || bookings.find((booking) => booking.payment_status === "pending");
+  const success = searchParams.get("success") === "true";
+  console.log(bookings.find((booking) => booking.booking_status === "pending"))
   const [ AddBooking, { data: bookingData, loading: bookingLoading, error: bookingError }]  = useMutation(ADD_BOOKING, {
     variables: { trip_id: tripData?.id, seats_booked: passengers},
   });
@@ -129,34 +166,49 @@ const Details = () => {
     } else {
       nhost.graphql.request(GET_TRIP, { id: searchParams.get("trip") }).then(({ data }) => {
         setTripData(data.trips_by_pk);
-        const directionsService = new window.google.maps.DirectionsService()
-        directionsService.route(
-          {
-            origin: data.trips_by_pk.departure_address,
-            destination: data.trips_by_pk.arrival_address,
-            travelMode: window.google.maps.TravelMode.DRIVING
-          }).then((response) => {
-            setDirections(response)
-          }).catch((e) => console.log(e))
       });
     }
   }, [trip, searchParams]);
 
   useEffect(() => {
-    if(tripData && tripData?.driver_id === userId) {
-      nhost.graphql.request(GET_BOOKINGS, { trip_id: tripData.id }).then(({ data }) => {
+    if(!tripData) return;
+    setDirections(null);
+    const directionsService = new window.google.maps.DirectionsService()
+    directionsService.route(
+      {
+        origin: tripData.departure_address,
+        destination: tripData.arrival_address,
+        travelMode: window.google.maps.TravelMode.DRIVING
+      }).then((response) => {
+        setDirections(response)
+      }).catch((e) => console.log(e))
+  }, [tripData])
+
+  useEffect(() => {
+    if(tripData && userId) {
+      nhost.graphql.request(tripData?.driver_id === userId ? GET_BOOKINGS : GET_USER_BOOKINGS, { trip_id: tripData.id, user_id: userId }).then(({ data }) => {
         setBookings(data?.bookings || []);
       });
     }
   }, [tripData, userId]);
 
-
   useEffect(() => {
     if(bookingData?.insert_bookings_one?.id) {
       window.location.replace(`${nhost.functions.url}/payment?booking=${bookingData.insert_bookings_one.id}`);
-      console.log(bookingData.insert_bookings_one.id);
     }
   }, [bookingData]);
+
+  const handleBooking = (id) => {
+    setPendingRedirect(true);
+    window.location.replace(`${nhost.functions.url}/payment?booking=${id}`);
+  }
+
+  const removeBooking = () => {
+    nhost.graphql.request(DELETE_USER_BOOKING, { id: deleteModal, user_id: userId }).then(({ data }) => {
+      setBookings(data.delete_bookings_by_pk.trip.bookings);
+    });
+  }
+
 
   const styles = {
     logo: {
@@ -173,13 +225,13 @@ const Details = () => {
     },
     map_div: {
       width: "100%",
-      height: "100%",
+      height: "40vh",
       marginBottom: "1rem",
     },
     card: {
       padding: "1.5rem",
-
       width: "30%",
+      height: "fit-content",
       border: "1.5px solid rgb(242, 242, 242)",
       borderRadius: "15px",
       boxShadow: "rgba(0, 0, 0, 0.2) 0px 5px 20px",
@@ -215,11 +267,54 @@ const Details = () => {
 
 
   const alert = success || error
-  console.log(alert)
+
   return (
     <Box>
+    <Dialog
+        open={deleteModal !== null}
+        onClose={()=>{setDeleteModal(null)}}
+      >
+      <DialogTitle>
+        {"Etes vous sûr de vouloir annuler ?"}
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText id="alert-dialog-description">
+          Après l'annulation de votre réservation, vous receverez un remboursement de 100% du prix de votre réservation dans un délai de 5 jours ouvrables.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button color="info" onClick={()=>{setDeleteModal(null)}}>retour</Button>
+        <Button onClick={()=>{
+          removeBooking()
+          setDeleteModal(null)
+        }} autoFocus>
+          Annuler la reservation
+        </Button>
+      </DialogActions>
+    </Dialog>
+    <Dialog
+        open={cancelModal}
+        onClose={()=>{setCancelModal(false)}}
+      >
+      <DialogTitle>
+        {"Etes vous sûr de vouloir annuler ?"}
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Après l'annulation de votre trajet, votre balance sera debité et les Passagers seront remboursés.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button color="info" onClick={()=>{setCancelModal(false)}}>retour</Button>
+        <Button onClick={()=>{
+          //removeBooking()
+          setCancelModal(false)
+        }} autoFocus>
+          Annuler le trajet
+        </Button>
+      </DialogActions>
+    </Dialog>
     <Container
-        minWidth="xl"
         sx={{
           display: "flex",
           justifyContent: "space-between",
@@ -374,9 +469,9 @@ const Details = () => {
               }}
             >
               {alert?<Alert severity={error?"error":"success"} sx={{mb: 2}}>
-                    {error && "Vous avez annulé le paiement, vous pouvez annuler votre reservation ou reessayer "}
+                    {error && "Vous avez annulé le paiement"}
                     {success && "Votre reservation a été effectuée avec succès, vous pouvez la consulter "}
-                    <Link to="/account/reservations">sur cette page</Link>
+                    {success && <Link to="/account/reservations">sur cette page</Link>}
               </Alert>:
               <React.Fragment>
               <TextField
@@ -412,17 +507,37 @@ const Details = () => {
             </Paper>
           ) : (
             <Box sx={styles.card}>
-            {userId === tripData?.driver_id ? (
-              <Typography variant="h6" color="initial">
-                Vous ne pouvez pas réserver votre propre trajet
-              </Typography>
-            ) : (
+            {bookings&&<Typography variant="h6" color="initial">Vos réservations: </Typography>}
+            {bookings.map((booking, index) => (
+              <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", mt: "1rem"}}>
+                <Typography variant="body1" color="initial">
+                  {booking?.user?.displayName} &bull; {booking.seats_booked} place{booking.seats_booked > 1 && "s"}
+                </Typography>
+                {booking.payment_status === "pending" && 
+                  <Button variant="outlined" color="warning" 
+                          sx={{mr: 2}}
+                          onClick={()=>handleBooking(booking.id)}>
+                    Payer
+                  </Button>}
+                {booking?.payment_status&&<Button variant="outlined" color="error" onClick={()=>setDeleteModal(booking.id)}>
+                  Annuler
+                </Button>}
+                </Box>
+            ))}
+            {bookings && <Divider sx={{ mt: 3, mb: 3 }} />}
+            {tripData?.driver_id === userId && 
+              <Box sx={{display: 'flex', flexDirection: 'row-reverse'}}>
+                <Button variant="outlined" color="error" onClick={()=>setCancelModal(true)}>Annuler le trajet</Button>
+              </Box>
+            }
+            {userId !== tripData?.driver_id &&
               <Box
                 sx={{
                   display: "flex",
                   flexDirection: "column",
                 }}
               >
+              <Typography variant="h6" color="initial">Nouvelle réservation: </Typography>
                 <Box
                   style={{
                     display: "flex",
@@ -465,9 +580,9 @@ const Details = () => {
                   <Skeleton variant="text"/>}
                 </Box>
                 {alert&&<Alert severity={error?"error":"success"} sx={{mb: 2}}>
-                  {error && "Vous avez annulé le paiement, vous pouvez annuler votre reservation ou reessayer "}
+                  {error && "Vous avez annulé le paiement, vous pouvez annuler votre reservation ou reessayer"}
                   {success && "Votre reservation a été effectuée avec succès, vous pouvez la consulter "}
-                  <Link to="/account/reservations">sur cette page</Link>
+                  {success && <Link to="/account/reservations">sur cette page</Link>}
                 </Alert>}
                 <LoadingButton
                   fullWidth
@@ -490,7 +605,7 @@ const Details = () => {
                 >
                   Réserver et payer
                 </LoadingButton>
-              </Box>)}
+              </Box>}
             </Box>
           )}
         </Box>

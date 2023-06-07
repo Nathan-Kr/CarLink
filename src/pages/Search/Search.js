@@ -22,7 +22,7 @@ import {
 
 const GET_TRIPS = gql`
 query GetTrips($bound: Int, $endlat: float8, $startlat: float8, $startlong: float8, $endlong: float8, $departure_date: date) {
-  get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong, departure_date: $departure_date}) {
+  get_nearby_trips(args: {bound: $bound, endlat: $endlat, endlong: $endlong, startlat: $startlat, startlong: $startlong, departure_date: $departure_date}, order_by: {departure_time: asc}) {
     id
     driver_id
     departure_address
