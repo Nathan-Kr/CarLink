@@ -177,3 +177,12 @@ select_permissions:
         - rating
         - reviews_count
       filter: {}
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - avatar_url
+      filter: {}
+      check: null
+      set:
+        id: X-Hasura-User-Id
