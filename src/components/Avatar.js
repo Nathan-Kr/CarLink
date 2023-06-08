@@ -58,8 +58,8 @@ export const Avatar = ({color}) => {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
             >
-                <MenuItem onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">Profile</Typography>
+                <MenuItem onClick={()=>navigate("/account/profile")}>
+                    <Typography textAlign="center">Profil</Typography>
                 </MenuItem>
                 <MenuItem onClick={()=>navigate("/account/reservations")}>
                     <Typography textAlign="center">Mes trajets</Typography>

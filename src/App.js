@@ -8,6 +8,8 @@ import {ProtectedRoute} from "./components/ProtectedRoute";
 import SignInSide from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Itinerary from "./pages/Itinerary/Itinerary";
+import Profile from "./pages/Profile";
+
 
 const App = () => {
   return (
@@ -21,6 +23,7 @@ const App = () => {
       <Route path="/account" element={<ProtectedRoute />}>
           <Route path="reservations" element={<Reservations />} />
           <Route path="itinerary" element={<Itinerary />} />
+          <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>
   );
